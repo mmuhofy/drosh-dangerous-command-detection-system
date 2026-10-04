@@ -1,0 +1,38 @@
+# Drosh — gerçek komut tohumu (seed)
+#
+# Bu dosya ELLE YAZILIR. Üretici (grammar.py) etiketleri yapıdan garanti eder,
+# ama gerçek dünyadaki komut dağılımını yalnızca senin telefonundaki gerçek
+# komutlar temsil edebilir. Uydurma bir dağılımın en büyük açığı budur.
+#
+# NASIL DOLDURULUR
+# ----------------
+#   * Satır başına TAM OLARAK bir komut yaz.
+#   * '#' ile başlayan satırlar yorum. Boş satırlar yok sayılır.
+#   * Daha önce doldurduğun satırları silme — geçmişi de görmek lazım.
+#   * Üretici ~40-60k satır sentetik komut üretecek. Senin 200-500 satırın
+#     bunun %1'i bile değil ama dağılımı düzelten taraf o.
+#
+# ETİKET
+# ------
+#   komut                              -> etiketsiz, ben notere ederim
+#   komut  |||  destructive            -> sen etiketliyorsun
+#
+#   Geçerli etiketler: safe | risky | destructive
+#
+# EN FAYDALI 100 SATIR
+# --------------------
+#   1. Sık sık yazdığın ~30 komut (uyarı çıkmasını KESİNLİKLE istemediğin)
+#   2. Yanlışlıkla bir şeyleri sildiğini hatırladığın ~20 komut
+#   3. "Bunu yazsam korkardım" dediğin ~20 komut
+#   4. Tehlikeli GÖRÜNEN ama tamamen masum ~30 komut  <- EN KRİTİK KATEGORİ
+#
+#   4. madde modeli en çok zorlayan sınıf. `rm -rf node_modules`,
+#   `git clean -fdx`, `docker system prune -a`, `truncate -s 0 app.log` gibi
+#   komutlar tehlikeli kelimeleri içerir ama günlük hayatta hep çalıştırılır.
+#   Model bunları "tehlikeli" görürse özellik ilk günden itibaren işe yaramaz.
+#
+# -----------------------------------------------------------------------------
+# === SIK SIK YAZDIKLARIM (false positive kontrolü) ===
+# === YANLISLIKLA SİLDİKLERIM ===
+# === KORKTUĞUM KOMUTLAR ===
+# === TEHLİKELİ GÖRÜNÜP MASUM OLANLAR ===

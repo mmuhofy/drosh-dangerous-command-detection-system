@@ -1,0 +1,31 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Generated dataset — large, fully reproducible from ml/ + ml/data/.
+# The hand-written seed files in ml/data/*.txt ARE tracked; only the
+# synthesised corpus is not.
+ml/artifacts/*
+!ml/artifacts/.gitkeep
+ml/data/generated/
+
+# Generated model artefacts.
+# html/command-risk/risk-model.js and golden-vectors.json ARE tracked on purpose:
+# they are the committed contract between the Python trainer and the browser
+# runtime, and the prototype must run from a clean checkout with no build step.
+
+# Node (only used for an optional JS-side unit test of risk-scoring.js)
+node_modules/
+package-lock.json
+
+# Editors / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

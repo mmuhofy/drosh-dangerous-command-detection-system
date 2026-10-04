@@ -1,0 +1,417 @@
+/* Drosh — dangerous-command detection prototype
+ *
+ * Palette source of truth: DroshColors.kt / DroshPalette.kt (primary #4C9EFF).
+ * Note: accent is BLUE #4C9EFF, not the gold #E8C547 that some older docs in
+ * the Drosh repo still mention. The Kotlin palette is what ships.
+ * Fonts: Outfit (UI) + JetBrains Mono (terminal), matching html/agent-ui.
+ */
+
+@import url("https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap");
+
+:root {
+  --bg: #0e0e0e;
+  --surface: #1a1a1a;
+  --surface-low: #151515;
+  --surface-variant: #242424;
+  --surface-high: #2e2e2e;
+  --outline: #3a3a3a;
+
+  --primary: #4c9eff;
+  --text: #f2f2f2;
+  --text-secondary: #b4b4b4;
+  --text-muted: #8a8a8a;
+  --text-disabled: #4d4d4d;
+
+  --safe: #3dd68c;
+  --warn: #f0b429;
+  --danger: #f2555a;
+
+  --mono: "JetBrains Mono", ui-monospace, monospace;
+  --ui: "Outfit", system-ui, sans-serif;
+
+  --r-card: 14px;
+  --r-btn: 12px;
+  --r-chip: 8px;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--ui);
+  min-height: 100vh;
+  padding: 28px 20px 80px;
+  line-height: 1.5;
+}
+
+.wrap {
+  max-width: 940px;
+  margin: 0 auto;
+}
+
+/* --- header ------------------------------------------------------------- */
+
+header {
+  border-bottom: 1px solid var(--outline);
+  padding-bottom: 18px;
+  margin-bottom: 24px;
+}
+
+h1 {
+  font-size: 22px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.subtitle {
+  color: var(--text-muted);
+  font-size: 13px;
+  margin-top: 4px;
+}
+
+.badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.badge {
+  font-family: var(--mono);
+  font-size: 11px;
+  padding: 4px 10px;
+  border-radius: var(--r-chip);
+  border: 1px solid var(--outline);
+  color: var(--text-muted);
+  background: var(--surface-low);
+  white-space: nowrap;
+}
+
+.badge.ok {
+  color: var(--safe);
+  border-color: color-mix(in srgb, var(--safe) 40%, transparent);
+}
+.badge.bad {
+  color: var(--danger);
+  border-color: color-mix(in srgb, var(--danger) 40%, transparent);
+}
+.badge.wait {
+  color: var(--warn);
+  border-color: color-mix(in srgb, var(--warn) 40%, transparent);
+}
+
+/* --- input -------------------------------------------------------------- */
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--outline);
+  border-radius: var(--r-card);
+  padding: 18px;
+  margin-bottom: 16px;
+}
+
+.card h2 {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 14px;
+}
+
+.term {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--surface-lowest, #080808);
+  background: #080808;
+  border: 1px solid var(--outline);
+  border-radius: var(--r-btn);
+  padding: 12px 14px;
+}
+
+.term:focus-within {
+  border-color: var(--primary);
+}
+
+.prompt {
+  font-family: var(--mono);
+  color: var(--primary);
+  font-weight: 600;
+  user-select: none;
+}
+
+#cmd {
+  flex: 1;
+  background: none;
+  border: none;
+  outline: none;
+  color: var(--text);
+  font-family: var(--mono);
+  font-size: 14px;
+}
+
+#cmd::placeholder {
+  color: var(--text-disabled);
+}
+
+.hint {
+  color: var(--text-disabled);
+  font-size: 11px;
+  font-family: var(--mono);
+  margin-top: 8px;
+}
+
+/* --- verdict ------------------------------------------------------------ */
+
+.verdict {
+  display: none;
+}
+
+.verdict.show {
+  display: block;
+}
+
+.verdict-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.verdict-label {
+  font-size: 26px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.verdict-class {
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-left: auto;
+}
+
+.v-safe {
+  color: var(--safe);
+}
+.v-risky {
+  color: var(--warn);
+}
+.v-destructive {
+  color: var(--danger);
+}
+
+/* score bar */
+
+.bar {
+  position: relative;
+  height: 10px;
+  background: var(--surface-variant);
+  border-radius: 999px;
+  margin: 18px 0 6px;
+  overflow: visible;
+}
+
+.bar-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: var(--safe);
+  transition: width 220ms ease, background 220ms ease;
+  width: 0;
+}
+
+.bar-marks {
+  position: relative;
+  height: 18px;
+}
+
+.mark {
+  position: absolute;
+  top: 4px;
+  width: 1px;
+  height: 8px;
+  background: var(--text-muted);
+}
+
+.mark span {
+  position: absolute;
+  top: 11px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-family: var(--mono);
+  font-size: 9px;
+  color: var(--text-disabled);
+  white-space: nowrap;
+}
+
+.scale {
+  display: flex;
+  justify-content: space-between;
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--text-disabled);
+}
+
+/* --- explanation ------------------------------------------------------- */
+
+.reasons {
+  list-style: none;
+  margin-top: 18px;
+  border-top: 1px solid var(--outline);
+}
+
+.reasons li {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  padding: 9px 0;
+  border-bottom: 1px solid var(--surface-variant);
+  font-size: 13px;
+}
+
+.reasons .term-token {
+  font-family: var(--mono);
+  background: var(--surface-variant);
+  border: 1px solid var(--outline);
+  border-radius: 5px;
+  padding: 1px 6px;
+  font-size: 12px;
+  white-space: nowrap;
+  flex-shrink: 0;
+  max-width: 260px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.reasons .delta {
+  font-family: var(--mono);
+  font-size: 12px;
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+.delta.pos {
+  color: var(--danger);
+}
+.delta.neg {
+  color: var(--safe);
+}
+
+.empty-note {
+  color: var(--text-muted);
+  font-size: 13px;
+  padding: 14px 0 4px;
+}
+
+/* --- normalisation trace ----------------------------------------------- */
+
+details {
+  margin-top: 4px;
+}
+
+summary {
+  cursor: pointer;
+  font-size: 12px;
+  color: var(--text-muted);
+  user-select: none;
+}
+
+summary:hover {
+  color: var(--text-secondary);
+}
+
+.trace {
+  margin-top: 12px;
+  font-family: var(--mono);
+  font-size: 12px;
+  display: grid;
+  gap: 8px;
+}
+
+.trace-row {
+  display: grid;
+  grid-template-columns: 128px 1fr;
+  gap: 10px;
+  align-items: start;
+}
+
+.trace-key {
+  color: var(--text-disabled);
+}
+
+.trace-val {
+  color: var(--text-secondary);
+  word-break: break-all;
+}
+
+.trace-val .seg {
+  background: var(--surface-variant);
+  border-radius: 4px;
+  padding: 1px 5px;
+  margin-right: 4px;
+  display: inline-block;
+}
+
+/* --- samples ------------------------------------------------------------ */
+
+.samples {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.sample {
+  font-family: var(--mono);
+  font-size: 12px;
+  background: var(--surface-low);
+  border: 1px solid var(--outline);
+  color: var(--text-secondary);
+  border-radius: var(--r-chip);
+  padding: 6px 10px;
+  cursor: pointer;
+  transition: border-color 150ms ease, color 150ms ease;
+}
+
+.sample:hover {
+  border-color: var(--primary);
+  color: var(--text);
+}
+
+.sample.hot {
+  border-color: color-mix(in srgb, var(--danger) 45%, transparent);
+  color: var(--danger);
+}
+
+.sample.mild {
+  border-color: color-mix(in srgb, var(--warn) 40%, transparent);
+  color: var(--warn);
+}
+
+/* --- placeholder / footer ---------------------------------------------- */
+
+.placeholder {
+  color: var(--text-muted);
+  font-size: 13px;
+  text-align: center;
+  padding: 22px 10px;
+}
+
+footer {
+  margin-top: 28px;
+  padding-top: 16px;
+  border-top: 1px solid var(--outline);
+  color: var(--text-disabled);
+  font-size: 11px;
+  font-family: var(--mono);
+  line-height: 1.8;
+}
+
+footer a {
+  color: var(--text-muted);
+}
