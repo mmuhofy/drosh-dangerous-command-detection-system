@@ -404,13 +404,13 @@ def choose_thresholds(y_true: np.ndarray, risk: np.ndarray) -> dict[str, float]:
     top = float(sorted_risk[-1])
     candidates = np.concatenate(
         [
-            # k = 0: warn on nothing. Must sit above every score.
+            # k = 0: warn on nothing. Must sit strictly above every score.
             [top + 1.0],
             # k = 1..n-1: the midpoint that splits sorted_risk[k-1] from [k].
             sorted_risk[:-1] + (sorted_risk[1:] - sorted_risk[:-1]) / 2.0,
-            # k = n: warn on everything, without disturbing the tie group at the
-            # top.
-            [top + 1e-9],
+            # k = n: warn on everything. The maximum itself suffices, because
+            # the rule is >=, so a score equal to the threshold fires.
+            [top],
         ]
     )
 
