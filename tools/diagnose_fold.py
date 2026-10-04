@@ -50,7 +50,7 @@ def main() -> None:
         norm = normalize(command)
 
         dense_z = feat.standardise(feat.dense_features(norm)[None, :], spec)
-        dense_manual = float(dense_z @ dense_w)
+        dense_manual = float((dense_z @ dense_w)[0])
 
         sparse_manual = 0.0
         for gram in presence_ngrams(norm.views):
