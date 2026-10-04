@@ -414,19 +414,20 @@ def choose_thresholds(y_true: np.ndarray, risk: np.ndarray) -> dict[str, float]:
         ]
     )
 
-    # What a cut of index k misses. Note the direction differs per term:
+    # Which samples a cut of index k covers, and which it therefore leaves out.
+    # candidates[k] fires on samples [k:], so:
     #
-    #   candidates[k] warns samples [k:], so
-    #     * SAFE      in [k:] is warned  -> false alarm   (suffix)
-    #     * RISKY     in [0, k) is silent -> missed warn (PREFIX)
-    #     * DESTRUCTIVE in [j:] is unblocked -> missed block (suffix)
+    #   safe in [i:]        is warned       -> false alarm    (SUFFIX)
+    #   risky in [0, i)     is silent       -> missed warning (PREFIX)
+    #   destructive in [0, j) is unblocked -> missed block    (PREFIX)
     #
-    # Using a suffix for the missed-warning term scores every RISKY command as
-    # missed at the most sensitive threshold and as warned at the least, which
-    # inverts the gradient and drags both thresholds to the ends of the range.
+    # Two of the three are prefixes, and getting that wrong on the block term
+    # charges a miss for every destructive command the threshold *does* catch.
+    # All three were suffix counts at some point; each inverted its own gradient
+    # and pushed its threshold to the end of the range.
     safe_suffix = np.concatenate([np.cumsum(is_safe[::-1])[::-1], [0.0]])
     risky_prefix = np.concatenate([[0.0], np.cumsum(is_risky)])
-    destr_suffix = np.concatenate([np.cumsum(is_destructive[::-1])[::-1], [0.0]])
+    destr_prefix = np.concatenate([[0.0], np.cumsum(is_destructive)])
 
     total_safe = float(is_safe.sum())
     total_risky = float(is_risky.sum())
@@ -442,19 +443,14 @@ def choose_thresholds(y_true: np.ndarray, risk: np.ndarray) -> dict[str, float]:
         safe_suffix[0] counts every safe sample as warned, which is the exact
         inverse. They are therefore spelled out.
         """
-        if k == 0:
-            return total_risky * MISSED_RISK_COST
-        if k == n:
-            return 0.0
         return safe_suffix[k] + risky_prefix[k] * MISSED_RISK_COST
 
     def block_cost(k: int) -> float:
-        """Cost of setting the block threshold at candidates[k]."""
-        if k == 0:
-            return total_destructive * FALSE_NEGATIVE_COST
-        if k == n:
-            return 0.0
-        return destr_suffix[k] * FALSE_NEGATIVE_COST
+        """Cost of setting the block threshold at candidates[k].
+
+        samples [k:] are blocked, so destructive commands in [0, k) are missed.
+        """
+        return destr_prefix[k] * FALSE_NEGATIVE_COST
 
     best_cost = float("inf")
     best_i, best_j = n, n
