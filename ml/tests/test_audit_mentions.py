@@ -25,6 +25,9 @@ from drosh_ml.audit_mentions import Finding, audit
 
 # Rows that MUST be accepted: the payload is written, quoted, printed or
 # searched for, and never reaches a shell.
+# Payloads written by a command that cannot execute them. Note `echo dd
+# if=/dev/zero of=/dev/sda`: the audit must let it through, or it rejects the
+# exact rows the fixture exists to provide.
 INERT = [
     "echo rm -rf /",
     "echo 'rm -rf /'",
@@ -59,6 +62,8 @@ INERT = [
     "cat /proc/meminfo",
     "dmesg | grep -i oom",
     "history | grep -E 'rm|dd|mkfs'",
+    "echo 'watch -n1 rm -rf /tmp'",
+    "sed -n '/xargs rm/p' script.sh",
 ]
 
 # Rows that MUST be rejected: they look like the above but actually run something.

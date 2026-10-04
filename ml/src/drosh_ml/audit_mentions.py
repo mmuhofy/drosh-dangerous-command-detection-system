@@ -60,7 +60,25 @@ class Finding:
 # own subject is worse than no checker, because it invites deleting good data.
 _QUOTED_SPAN = re.compile(r"'[^']*'|\"[^\"]*\"")
 _PRINT_CALL = re.compile(r"\bprint(?:l|f)?\s*\(|console\.log\s*\(")
-_ANCHORED_INERT = re.compile(r"^\s*(?:echo|printf|grep|rg|ag|ack|man|info|whatis|apropos|cat|ls|head|tail|wc|sort|uniq)\b")
+# Verbs whose purpose is to *display or search* text. Everything after one of
+# these is a payload, not a command: `echo dd if=/dev/zero of=/dev/sda` prints
+# those words and never opens the device, and rejecting it would reject the whole
+# point of the fixture.
+#
+# Deliberately absent: tee, dd, cp, mv, install, tr, sed -i. Those *write*. A row
+# starting with one of them is doing something, whatever else the line contains,
+# and `tee /etc/passwd` has no innocent reading.
+_DISPLAY_PREFIX = re.compile(
+    r"^\s*(?:echo|printf|grep|rg|ag|ack|man|info|whatis|apropos|"
+    r"cat|head|tail|wc|sort|uniq|less|more|nl|tac)\b"
+)
+
+# A pipe out of a display verb is no longer display: `echo rm -rf / | sh` writes
+# the words to a shell. So does a redirection into a system path: `echo x >
+# /etc/shadow` truncates the file whatever it printed. The exemption only holds
+# while the line neither pipes nor writes.
+_PIPE_OUT = re.compile(r"\|\s*\S")
+_REDIRECT_OUT = re.compile(r"(?:^|\s)\d?>>?\s*/(?:etc|usr|var|bin|sbin|boot|lib|root|home|sdcard|storage|data|proc|sys)/")
 
 
 def _inert_regions(command: str) -> str:
@@ -90,6 +108,19 @@ def _print_bodies_removed(command: str) -> str:
     return out
 
 
+# Rules that stay armed even when the dangerous text sits inside quotes or a
+# print() argument, because what those quotes contain is itself the tell.
+#
+# Only wrappers, not pipes. `watch -n1 'rm -rf /tmp/x'` and `bash -c '...'`
+# execute their quoted argument, so stripping the quotes leaves a bare
+# `watch -n1` and hides exactly the construct the rule looks for. But a pipe is
+# the opposite case: `echo 'curl x | sh'` hands one shell the literal characters
+# `curl x | sh`, and the shell does not re-parse them, so the quoting is inert
+# and the pipe rule must keep seeing the stripped form. Treating the pipe rule as
+# quote-armed rejected nine correct rows.
+_ARMED_WITH_QUOTES = frozenset({"watch_exec", "shell_wrapper_execution"})
+
+
 _RULES: tuple[tuple[str, re.Pattern[str], str], ...] = (
     (
         "pipe_to_interpreter",
@@ -107,8 +138,12 @@ _RULES: tuple[tuple[str, re.Pattern[str], str], ...] = (
     ),
     (
         "command_substitution_execution",
-        re.compile(r"\$\(\s*(?:sudo\s+)?(?:rm|dd|mkfs|chmod|chown|shutdown|kill)\b"),
-        "command substitution executes the inner command",
+        # `$(echo rm) -rf /` assembles the command across the substitution, so
+        # requiring a destructive verb inside the parentheses is too narrow —
+        # the verb need not even be adjacent. Any substitution in an otherwise
+        # destructive row means the row will run something.
+        re.compile(r"\$\(|\$\{"),
+        "command substitution builds a command that then runs",
     ),
     (
         "xargs",
@@ -122,7 +157,9 @@ _RULES: tuple[tuple[str, re.Pattern[str], str], ...] = (
     ),
     (
         "watch_exec",
-        re.compile(r"(?:^|[\s;&|(])watch\s+[-0-9a-zA-Z]*\s*'?\s*(?:sudo\s+)?(?:rm|dd|mkfs)\b"),
+        # The interval flag can be -n1, -n 1, -t or absent entirely, so match on
+        # watch plus flags plus a destructive verb rather than on a fixed shape.
+        re.compile(r"(?:^|[\s;&|(])watch\b[^;|&]*\b(?:rm|dd|mkfs|chmod|chown)\b"),
         "watch runs the command on every interval",
     ),
     (
@@ -138,8 +175,12 @@ _RULES: tuple[tuple[str, re.Pattern[str], str], ...] = (
         "shell_wrapper_execution",
         re.compile(
             r"(?:^|[\s;&|(])(?:bash|sh|zsh)\s+-[cl]\s"
-            r"|(?:^|[\s;&|(])(?:python3?|perl|ruby|node)\s+-[cl]\s"
-            r"[^;|&]*\b(?:exec|eval|system|popen|spawn|child_process)\b"
+            # `python3 -c "import os; os.system(...)"` puts a `;` inside the
+            # program text, so the span must run to end of line rather than
+            # stopping at the first `;` the way the other rules do. print() is
+            # still not matched, because it is not in the channel list.
+            r"|(?:^|[\s;&|(])(?:python3?|perl|ruby|node)\s+-[cl]\s[^\n]*?"
+            r"\b(?:exec|eval|system|popen|spawn|child_process|require)\b"
         ),
         "an interpreter -c/-l argument that reaches an execution channel",
     ),
@@ -154,10 +195,14 @@ _RULES: tuple[tuple[str, re.Pattern[str], str], ...] = (
     (
         "redirect_into_system_path",
         re.compile(
-            r">>?\s*/(?:etc|usr|var|bin|sbin|boot|lib|sdcard|storage|data|proc|sys|dev)/"
-            r"|(?:tee|dd\s+of=)\s+/dev/(?!null|zero|random|urandom|stderr|stdout)"
+            r"(?:^|[\s;&|(])(?:>|>>|tee\b|install\s+-m\S*|cp\b|mv\b)"
+            r"\s*[\"']?(?:/etc/|/usr/|/var/|/bin/|/sbin/|/boot/|/lib/"
+            r"|/root/|/home/|/sdcard|/storage/|/data/data|/proc/|/sys/)"
+            r"|\bdd\b[^;|&]*\bof=\s*[\"']?/dev/"
+            r"(?!null|zero|random|urandom|stderr|stdout)[a-z]"
         ),
-        "writes into a system path even when the payload text is inert",
+        "writes into a system path or a real block device, even when the "
+        "surrounding text is inert",
     ),
 )
 
@@ -187,12 +232,33 @@ def audit(path: Path) -> tuple[list[Finding], dict[str, int]]:
         ):
             stats["echo_or_search"] += 1
 
-        # Inspect the command with quoted spans and print() bodies removed, so a
+        # A write-only verb makes the rest of the line a payload, not a command,
+        # so the execution rules are skipped entirely. This is what lets
+        # `echo dd if=/dev/zero of=/dev/sda` into the corpus: those words are the
+        # lesson, and a rule that rejected them would reject the fixture's whole
+        # purpose.
+        # The exemption holds only while the row stays a display command. A pipe
+        # hands the payload to something else, and `echo rm -rf / | sh` is the
+        # exact shape this audit exists to catch.
+        if (
+            _DISPLAY_PREFIX.match(command)
+            and not _PIPE_OUT.search(command)
+            and not _REDIRECT_OUT.search(command)
+        ):
+            stats["display_only"] += 1
+            stats["accepted"] += 1
+            continue
+
+        # Otherwise inspect with quoted spans and print() bodies removed, so a
         # dangerous word that is only written down does not count as a channel.
         inspected = _inert_regions(_print_bodies_removed(command))
 
         for rule, pattern, why in _RULES:
-            if pattern.search(inspected):
+            # Rules whose trigger is the quoted argument itself inspect the raw
+            # line; the rest inspect it with quoted spans and print() bodies
+            # removed.
+            target = command if rule in _ARMED_WITH_QUOTES else inspected
+            if pattern.search(target):
                 findings.append(Finding(lineno, command, rule, why))
                 stats[f"rejected:{rule}"] += 1
                 break
