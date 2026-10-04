@@ -356,34 +356,42 @@ def choose_thresholds(y_true: np.ndarray, risk: np.ndarray) -> dict[str, float]:
     Three mistakes are charged for, nothing else:
 
       * a DESTRUCTIVE command below ``block``: ``FALSE_NEGATIVE_COST`` (20x).
-      * a RISKY command below ``warn``: ``MISSED_RISK_COST`` (1x).
-      * a SAFE command at or above ``warn``: 1x.
+        Missing this loses data.
+      * a RISKY command below ``warn``: ``MISSED_RISK_COST`` (1x). A missed
+        ordinary warning.
+      * a SAFE command at or above ``warn``: 1x. Crying wolf.
 
     Correct RISKY warnings, correct DESTRUCTIVE blocks and correct silences are
-    free. The middle term is load-bearing: without it ``warn`` collapses to
-    -inf, because a warning only costs anything on a SAFE command.
+    free. The middle term is load-bearing: without it ``warn`` has no reason to
+    leave the floor, since a warning only costs anything on a SAFE command, and a
+    three-class taxonomy whose middle class never warns is not three-class.
 
-    Why a nested scan, and why it is still fast
-    -------------------------------------------
-    For a fixed ``warn`` cut, raising ``block`` can only reduce cost, so a naive
-    reading says the optimum always blocks everything and the two thresholds
-    collapse. That is wrong, and the reason is the interaction term: a
-    DESTRUCTIVE sample that is warned but not block-called is charged TWICE —
-    once as a cried-wolf if it was SAFE (it is not, so zero), and once as a
-    missed block. The real coupling is that a *higher* block also implies a
-    higher warn, because block >= warn is enforced, so sweeping warn in the outer
-    loop and, for each, the best block in an inner loop does find the joint
-    optimum. With the sentinels the candidate count is n+2, and the inner loop
-    is a single pass, so the whole thing is O(n^2) in the *candidate* count but
-    O(n) per pair with vectorised cost evaluation — a few hundred milliseconds
-    on a validation-sized split.
+    Candidate thresholds
+    -------------------
+    ``candidates[k]`` warns exactly the ``k`` lowest-scoring samples, so index 0
+    is "warn on nothing" and index n is "warn on everything". For k in the middle
+    the value is the midpoint between two observed scores, which is unambiguous
+    where a score itself is not: with ties, a threshold equal to an observation
+    includes the whole tie group, and the midpoint between distinct values always
+    separates them.
 
-    The result is validated by ``ml/tests/test_thresholds.py``, which compares
-    against a brute-force grid on small inputs.
+    The array is strictly ascending, so ``best_i <= best_j`` implies
+    ``warn <= block`` and no post-hoc clamping is needed. An earlier version
+    encoded "warn on nothing" as ``min - 1`` and clamped the result with
+    min/max; under a ``>=`` rule ``min - 1`` warns on *everything*, which
+    inverted the search and shipped block=2.00 on a model whose maximum score was
+    1.9993 — a risk class that could never fire. ml/tests/test_thresholds.py
+    exists because of that, and it fails loudly if this regresses.
+
+    Cost
+    ----
+    One sort, three suffix sums, then a scan over candidate pairs adding two
+    numbers each. O(n log n + k^2) with k = n+1 candidates; the inner term is a
+    float addition, not a masked array reduction.
     """
     y_true = np.asarray(y_true, dtype=np.float64)
     risk = np.asarray(risk, dtype=np.float64)
-    n = len(y_true)
+    n = len(risk)
     if n == 0:
         return {"warn": 1.0, "block": 3.0}
 
@@ -393,40 +401,41 @@ def choose_thresholds(y_true: np.ndarray, risk: np.ndarray) -> dict[str, float]:
     is_risky = (y_true == Risk.RISKY.value)[order]
     is_safe = (y_true == Risk.SAFE.value)[order]
 
-    # cuts[k] covers exactly samples[:k], so index 0 must mean "warn on nothing".
-    # With a >= rule that needs a threshold ABOVE the maximum, not below the
-    # minimum: risk >= (min - 1) is true for every sample, so a low sentinel
-    # warns on everything while the suffix sums assume nothing is warned. That
-    # inverted sentinel is what made the search return cost 2619 where the
-    # minimum is 43, and it is invisible in validation MAE.
-    cuts = np.concatenate([[np.max(sorted_risk) + 1.0], sorted_risk])
+    top = float(sorted_risk[-1])
+    candidates = np.concatenate(
+        [
+            # k = 0: warn on nothing. Must sit above every score.
+            [top + 1.0],
+            # k = 1..n-1: the midpoint that splits sorted_risk[k-1] from [k].
+            sorted_risk[:-1] + (sorted_risk[1:] - sorted_risk[:-1]) / 2.0,
+            # k = n: warn on everything, without disturbing the tie group at the
+            # top.
+            [top + 1e-9],
+        ]
+    )
 
-    # Cost of the samples a cut of index k does NOT cover, i.e. samples[k:].
-    # warn cut i  -> cries wolf on SAFE[i:], misses warnings on RISKY[i:]
-    # block cut j -> misses DESTRUCTIVE[j:]
+    # Suffix counts: how many samples of each class a cut of index k misses.
     safe_suffix = np.concatenate([np.cumsum(is_safe[::-1])[::-1], [0.0]])
     risky_suffix = np.concatenate([np.cumsum(is_risky[::-1])[::-1], [0.0]])
     destr_suffix = np.concatenate([np.cumsum(is_destructive[::-1])[::-1], [0.0]])
 
-    m = len(cuts)  # == n + 1
     best_cost = float("inf")
-    best_i, best_j = 0, m - 1
+    best_i, best_j = n, n
 
-    for i in range(m):
-        # Cost from warn not covering the tail: samples[i:] not warned.
-        base = safe_suffix[i] * 1.0 + risky_suffix[i] * MISSED_RISK_COST
-        for j in range(i, m):
-            # Block cut j: destructive in [j:] are missed.
+    for i in range(n + 1):
+        # Samples [i:] are not warned: safe ones are false alarms, risky ones are
+        # missed warnings.
+        base = safe_suffix[i] + risky_suffix[i] * MISSED_RISK_COST
+        for j in range(i, n + 1):
+            # Samples [j:] are not blocked: destructive ones are misses.
             cost = base + destr_suffix[j] * FALSE_NEGATIVE_COST
             if cost < best_cost - 1e-12:
                 best_cost = cost
                 best_i, best_j = i, j
 
-    warn_t = float(cuts[best_i])
-    block_t = float(cuts[best_j])
     return {
-        "warn": round(float(min(warn_t, block_t)), 6),
-        "block": round(float(max(warn_t, block_t)), 6),
+        "warn": round(float(candidates[best_i]), 6),
+        "block": round(float(candidates[best_j]), 6),
     }
 
 
