@@ -410,6 +410,8 @@ def choose_thresholds(y_true: np.ndarray, risk: np.ndarray) -> dict[str, float]:
     is_safe = (y_true == Risk.SAFE.value)[order]
 
     total_safe = float(is_safe.sum())
+    total_risky = float(is_risky.sum())
+    total_destructive = float(is_destructive.sum())
 
     safe_prefix = np.concatenate([[0.0], np.cumsum(is_safe)])
     risky_prefix = np.concatenate([[0.0], np.cumsum(is_risky)])
