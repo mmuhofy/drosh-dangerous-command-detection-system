@@ -393,11 +393,13 @@ def choose_thresholds(y_true: np.ndarray, risk: np.ndarray) -> dict[str, float]:
     is_risky = (y_true == Risk.RISKY.value)[order]
     is_safe = (y_true == Risk.SAFE.value)[order]
 
-    # cuts[k] covers exactly samples[:k]. One sentinel below the minimum is
-    # enough: index 0 means "warn on nothing", index n means "warn on
-    # everything", which is the same as an infinite block. Two sentinels would
-    # make `cuts` longer than the suffix arrays and overrun them.
-    cuts = np.concatenate([[np.min(sorted_risk) - 1.0], sorted_risk])
+    # cuts[k] covers exactly samples[:k], so index 0 must mean "warn on nothing".
+    # With a >= rule that needs a threshold ABOVE the maximum, not below the
+    # minimum: risk >= (min - 1) is true for every sample, so a low sentinel
+    # warns on everything while the suffix sums assume nothing is warned. That
+    # inverted sentinel is what made the search return cost 2619 where the
+    # minimum is 43, and it is invisible in validation MAE.
+    cuts = np.concatenate([[np.max(sorted_risk) + 1.0], sorted_risk])
 
     # Cost of the samples a cut of index k does NOT cover, i.e. samples[k:].
     # warn cut i  -> cries wolf on SAFE[i:], misses warnings on RISKY[i:]
