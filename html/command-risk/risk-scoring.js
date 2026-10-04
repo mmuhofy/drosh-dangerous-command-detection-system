@@ -448,10 +448,245 @@
     return found;
   }
 
+
   // --- scoring --------------------------------------------------------------
-  //
-  // Implemented in export.py's phase (step 4). Declared here so index.html can
-  // feature-detect it and show "model not loaded" rather than throwing.
+
+  /* Split a MODEL_JS blob into lookup structures.
+   *
+   * The vocabulary is shipped as one newline-delimited string rather than an
+   * object literal, because 55k entries as {"gram": i} is roughly 40% larger
+   * once the JSON quoting is counted, and this file is downloaded by a phone.
+   * Split once at load; the array is then indexed by position. */
+  function buildModel(blob) {
+    /* The vocabulary arrives base64-encoded because it contains the view-join
+     * NUL, and a raw 0x00 byte is not legal inside a JS string literal. It also
+     * compresses far better than escaped text would.
+     *
+     * One atob + one UTF-8 decode at startup, ~55k entries, negligible. */
+    var bytes = atob(blob.vocabB64);
+    var bytes8 = new Uint8Array(bytes.length);
+    for (var b = 0; b < bytes.length; b++) bytes8[b] = bytes.charCodeAt(b);
+    var vocab = new TextDecoder("utf-8").decode(bytes8).split("\n");
+
+    var vocabIndex = Object.create(null);
+    for (var i = 0; i < vocab.length; i++) vocabIndex[vocab[i]] = i;
+
+    return {
+      meta: blob,
+      vocab: vocab,
+      vocabIndex: vocabIndex,
+      coef: blob.coef,
+      denseCoef: blob.denseCoef,
+      denseMean: blob.denseMean,
+      denseStd: blob.denseStd,
+      bias: blob.bias,
+      thresholds: blob.thresholds,
+    };
+  }
+
+  /* Character n-grams of one already-joined string, presence semantics.
+   * Mirrors window_ngrams() in ml/src/drosh_ml/train.py. */
+  function windowNgrams(joined, min, max) {
+    var found = new Set();
+    var length = joined.length;
+    for (var size = min; size <= max; size++) {
+      if (length < size) break;
+      for (var start = 0; start + size <= length; start++) {
+        found.add(joined.slice(start, start + size));
+      }
+    }
+    return found;
+  }
+
+  /* Dense features — a line-for-line mirror of
+   * ml/src/drosh_ml/features.py::dense_features.
+   *
+   * This is the riskiest function in the file: the coefficients were fitted
+   * against Python's output for these 38 numbers. The golden-vector fixture is
+   * what proves the two agree; without it a silent drift here would only show
+   * up as subtly wrong scores.
+   *
+   * Returns a plain array in DENSE_NAMES order. */
+  var DENSE_NAMES = [
+    "segment_count", "has_sudo", "has_su", "has_doas", "rm_recursive_force",
+    "rm_any_recursive", "delete_target_system_path", "delete_target_home",
+    "delete_target_wildcard", "delete_target_relative", "delete_target_disposable",
+    "has_dd", "dd_to_block_device", "has_mkfs", "has_fs_table_tool", "has_fork_bomb",
+    "has_chmod_777", "chmod_recursive", "has_chown_recursive_root", "has_curl_or_wget",
+    "curl_pipe_to_shell", "has_base64_decode", "has_eval", "has_history_tamper",
+    "touches_ssh_keys", "has_shutdown", "has_kill_broad", "has_git_destructive",
+    "has_docker_prune", "has_kubectl_delete", "has_package_remove",
+    "has_truncate_or_log_empty", "subshell_depth", "backtick_count",
+    "quote_nesting", "flag_density", "path_depth", "mentions_only",
+  ];
+
+  function denseFeatures(norm) {
+    var text = norm.text;
+    var joined = norm.segments.join(" ");
+    var bin = function (b) {
+      return b ? 1.0 : 0.0;
+    };
+    var hit = function (re) {
+      return re.test(text);
+    };
+
+    var SYSTEM = /(?:^|[\s;&|(])\/(?:etc|usr|var|bin|sbin|boot|lib|opt|srv|root|home|sys|proc|dev|sdcard|storage|data)(?:\/|\b)/;
+    var HOME = /(?:^|[\s;&|(])(~|\$\{?HOME\}?|\$\{?PWD\}?|\$\(pwd\))(?:\/|\b|$)/;
+    var WILDCARD = /(?:^|[\s;&|(])\*(?:\.\*)?\*?(?:\/|$)/;
+    var RELATIVE = /(?:^|[\s;&|(])\.|\s\./;
+    var DISPOSABLE = /node_modules|\bbuild\/?\b|\bdist\/?\b|\btarget\/?\b|\.gradle|\.venv|\bvenv\/?\b|__pycache__|\.pytest_cache|\.mypy_cache|\.next|\.nuxt|\.cache|vendor\/?\b|pods\/?\b|deriveddata|\.terraform|\bcoverage\b|\.tox|\.parcel-cache|\.turbo|\*\.o\b|\*\.class\b|\*\.pyc\b|\.ds_store|\*\.log\b|\*\.tmp\b|\*\.bak\b/;
+    var BLOCKDEV = /\/dev\/(?:sd[a-z]|nvme\d|mmcblk|hd[a-z])/;
+    var FSTABLE = /\b(?:fdisk|parted|sgdisk|gparted|blkdiscard|wipefs)\b/;
+    var RMSEG = /\brm\b/;
+
+    var hasRmRf = /\brm\b[^;|&]*\s-{1,2}[a-z]*r[a-z]*f\b|\brm\s+-[a-z]*f[a-z]*r\b/.test(text);
+    var rmRecursive = /\brm\b[^;|&]*\s-{1,2}(?:r\b|recursive)/.test(text);
+
+    var rmSegment = joined;
+    for (var i = 0; i < norm.segments.length; i++) {
+      if (RMSEG.test(norm.segments[i])) {
+        rmSegment = norm.segments[i];
+        break;
+      }
+    }
+
+    var pipeToShell =
+      /(?:curl|wget|fetch)[^;|&]*\|\s*(?:sudo\s+)?(?:ba|z|k|da)?sh\b/.test(text) ||
+      /\|\s*(?:sudo\s+)?(?:python3?|perl|ruby|node|php)\b/.test(text);
+
+    var subshellDepth = countOf(text, "$(") + countOf(text, "${");
+    var backticks = countOf(text, "`");
+    var quotes = countOf(text, '"') + countOf(text, "'");
+
+    var flags = (text.match(/(?:^|\s)-{1,2}[a-zA-Z][\w-]*/g) || []).length;
+    var words = Math.max(1, text.split(/\s+/).filter(Boolean).length);
+
+    var paths = text.match(/(?:\/|~|\$\{?HOME\}?)\/[\w./-]*/g) || [];
+    var pathDepth = 0;
+    for (var j = 0; j < paths.length; j++) {
+      var d = countOf(paths[j], "/");
+      if (d > pathDepth) pathDepth = d;
+    }
+
+    var hasDangerWord = /\brm\b|\bdd\b|mkfs|chmod 777|fork bomb|:\{/.test(text);
+    var hasDangerVerb = /\brm\s+-|^\s*dd\b|\bmkfs\b|chmod|chown|shutdown|reboot|kill/.test(text);
+
+    return [
+      norm.segments.length,
+      bin(/(?:^|\s)sudo\b/.test(text)),
+      bin(/(?:^|\s)su\s+-|\bsu\s+c\b/.test(text)),
+      bin(/(?:^|\s)doas\b/.test(text)),
+      bin(hasRmRf),
+      bin(rmRecursive),
+      bin(SYSTEM.test(rmSegment)),
+      bin(HOME.test(rmSegment)),
+      bin(WILDCARD.test(rmSegment)),
+      bin(RELATIVE.test(rmSegment)),
+      bin(DISPOSABLE.test(rmSegment)),
+      bin(/\bdd\b/.test(text)),
+      bin(/\bdd\b/.test(text) && BLOCKDEV.test(text)),
+      bin(/\bmkfs\b|\bmke2fs\b|\bmkswap\b/.test(text)),
+      bin(FSTABLE.test(text)),
+      bin(/:\s*\(\s*\)\s*\{/.test(text)),
+      bin(/chmod[^;|&]*777/.test(text)),
+      bin(/chmod\s+-R\b|chmod\s+-r\b/.test(text)),
+      bin(/chown\s+-R\b[^;|&]*(?:root|0:0)/.test(text)),
+      bin(/\b(?:curl|wget|fetch)\b/.test(text)),
+      bin(pipeToShell),
+      bin(/base64\s+(?:-d|--decode|-D)/.test(text)),
+      bin(/(?:^|\s)eval\b/.test(text)),
+      bin(/history\s+-c|unset\s+HIST|>\s*~?\/?\.bash_history/.test(text)),
+      bin(/\.ssh\/|authorized_keys|id_rsa/.test(text)),
+      bin(/\b(?:shutdown|reboot|poweroff|halt|init\s+[06])\b/.test(text)),
+      bin(/kill\s+-9\s+-1|killall|pkill/.test(text)),
+      bin(/git\s+(reset\s+--hard|clean\s+-f|push\s+-[a-z]*f|--force)/.test(text)),
+      bin(/docker\s+(system|image|volume|container)\s+prune/.test(text)),
+      bin(/kubectl\s+delete/.test(text)),
+      bin(/(?:apt|apt-get|yum|dnf)\s+(remove|purge|autoremove)|(?:pip|npm|gem)\s+uninstall/.test(text)),
+      bin(/truncate\s+-s|>\s*[\w./-]*\.log/.test(text)),
+      subshellDepth,
+      backticks,
+      Math.floor(quotes / 2),
+      flags / words,
+      Math.min(pathDepth, 8),
+      bin(hasDangerWord && !hasDangerVerb),
+    ];
+  }
+
+  function countOf(haystack, needle) {
+    if (!needle) return 0;
+    var count = 0;
+    var index = haystack.indexOf(needle);
+    while (index !== -1) {
+      count++;
+      index = haystack.indexOf(needle, index + needle.length);
+    }
+    return count;
+  }
+
+  /* Score one normalised command.
+   *
+   * Returns { score, risk, reasons, featureCount }, where risk is one of
+   * safe/risky/destructive and reasons lists the strongest contributors, so the
+   * prototype can explain itself instead of being a black box.
+   *
+   * reasons carries the model weight, not the raw value: a token is only worth
+   * showing because the model found it informative. */
+  function score(model, norm) {
+    if (!model) return null;
+
+    var joined = norm.views.join("\u0000");
+    var grams = windowNgrams(joined, model.meta.ngramMin, model.meta.ngramMax);
+
+    var total = model.bias;
+    var reasons = [];
+
+    grams.forEach(function (gram) {
+      var index = model.vocabIndex[gram];
+      if (index === undefined) return;
+      var weight = model.coef[index];
+      total += weight;
+      if (Math.abs(weight) > 0.01) {
+        reasons.push({ feature: gram, weight: weight, description: "" });
+      }
+    });
+
+    var dense = denseFeatures(norm);
+    for (var i = 0; i < dense.length; i++) {
+      var z = (dense[i] - model.denseMean[i]) / model.denseStd[i];
+      var contribution = model.denseCoef[i] * z;
+      total += contribution;
+      if (Math.abs(contribution) > 0.01) {
+        reasons.push({
+          feature: DENSE_NAMES[i] || "dense[" + i + "]",
+          weight: contribution,
+          description: "",
+        });
+      }
+    }
+
+    var risk2 = 2.0 / (1.0 + Math.exp(-total));
+    var key =
+      risk2 >= model.thresholds.block
+        ? "destructive"
+        : risk2 >= model.thresholds.warn
+          ? "risky"
+          : "safe";
+
+    reasons.sort(function (a, b) {
+      return Math.abs(b.weight) - Math.abs(a.weight);
+    });
+
+    return {
+      score: risk2,
+      risk: { key: key, label: LABELS[key] },
+      reasons: reasons,
+      featureCount: grams.size,
+    };
+  }
+
+  var LABELS = { safe: "Guvenli", risky: "Supheli", destructive: "Tehlikeli" };
+
 
   var api = {
     // Must match drosh_ml.NORMALIZE_VERSION. The exporter stamps this value
@@ -465,8 +700,11 @@
     foldAscii: foldAscii,
     normalize: normalize,
     presenceNgrams: presenceNgrams,
-    score: null,
-    runSelfTest: null,
+    buildModel: buildModel,
+    score: score,
+    denseFeatures: denseFeatures,
+    windowNgrams: windowNgrams,
+    LABELS: LABELS,
   };
 
   global.DroshRisk = api;

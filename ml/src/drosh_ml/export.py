@@ -32,6 +32,7 @@ the JavaScript side needs no ordinal decoding.
 from __future__ import annotations
 
 import argparse
+import base64
 import json
 from pathlib import Path
 
@@ -262,12 +263,22 @@ def export_model(model) -> dict:
     )
 
     # --- the model itself ---
-    # N-grams can contain the view-join NUL (they were windowed over the joined
-    # string), so NUL is escaped alongside backslash and newline.
-    vocab_blob = "\n".join(
-        gram.replace("\\", "\\\\").replace("\n", "\\n").replace("\x00", "\\0")
-        for gram in sorted(pruned_vocab, key=pruned_vocab.get)
-    )
+    # The vocabulary is base64-encoded rather than embedded as a JS string
+    # literal. Two reasons, both learned the hard way:
+    #
+    #   * the view-join NUL is a real 0x00 byte in the middle of the vocab, which
+    #     is not legal inside a JavaScript string literal — the generated file
+    #     did not even parse;
+    #   * ~55k n-grams as a JS string with escaping is several hundred KB of
+    #     mostly-punctuation text.
+    #
+    # base64 costs a third of that after gzip and survives any transport, and
+    # the loader pays a one-time atob + UTF-8 decode at startup.
+    vocab_bytes = "\n".join(
+        sorted(pruned_vocab, key=pruned_vocab.get)
+    ).encode("utf-8")
+    vocab_blob = base64.b64encode(vocab_bytes).decode("ascii")
+
     coef_blob = ",".join(_js_number(c) for c in pruned_coef)
     dense_blob = ",".join(_js_number(float(w)) for w in dense_weights)
     mean_blob = ",".join(_js_number(float(m)) for m in model.dense_spec.mean)
@@ -297,7 +308,8 @@ window.DROSH_RISK_MODEL = {{
   denseCoef: [{dense_blob}],
   denseMean: [{mean_blob}],
   denseStd: [{std_blob}],
-  vocab: "{vocab_blob}",
+  // base64 of the newline-joined n-grams, in coefficient order.
+  vocabB64: "{vocab_blob}",
   coef: [{coef_blob}],
   bias: {_js_number(model.intercept)},
 }};
