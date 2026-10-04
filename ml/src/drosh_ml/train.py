@@ -409,14 +409,26 @@ def choose_thresholds(y_true: np.ndarray, risk: np.ndarray) -> dict[str, float]:
     risky_prefix = np.concatenate([[0.0], np.cumsum(is_risky)])
     destr_prefix = np.concatenate([[0.0], np.cumsum(is_destructive)])
 
-    # Distinct observed scores, plus a sentinel that fires on nothing.
+    # Candidate thresholds: every distinct observed score, every midpoint between
+    # two adjacent distinct scores, and one sentinel above the maximum meaning
+    # "fire on nothing".
+    #
+    # The midpoints are not redundant. The optimum of a threshold rule sits where
+    # the cost function changes slope, which is between two scores, not on one of
+    # them; using only observed scores leaves it on a grid and costs a few
+    # units. The start index comes from searchsorted for each, so ties and
+    # midpoints are both handled exactly.
     distinct = np.unique(sorted_risk)
+    midpoints = (
+        distinct[:-1] + (distinct[1:] - distinct[:-1]) / 2.0 if distinct.size > 1 else distinct[:0]
+    )
     above_max = float(sorted_risk[-1]) + 1.0
-    candidates = np.concatenate([distinct, [above_max]])
-    # Start index of the set that fires for each candidate. The sentinel fires on
+
+    candidates = np.unique(np.concatenate([distinct, midpoints, [above_max]]))
+    # Start index of the set that fires for each candidate; the sentinel fires on
     # nothing, so it starts at n.
     starts = np.append(
-        np.searchsorted(sorted_risk, distinct, side="left"), n
+        np.searchsorted(sorted_risk, candidates[:-1], side="left"), n
     ).astype(np.intp)
 
     best_cost = float("inf")
