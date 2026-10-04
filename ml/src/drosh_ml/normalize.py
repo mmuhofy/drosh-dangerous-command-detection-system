@@ -94,8 +94,6 @@ SEGMENT_SEPARATORS: tuple[tuple[str, str], ...] = (
     ("\r", " ; "),
 )
 
-#: Flattened operator set, longest-first so ``&&`` is not read as two ``&``.
-_OPERATORS: tuple[str, ...] = tuple(op for op, _ in SEGMENT_SEPARATORS)
 
 #: Characters that separate independent shell commands, each captured so the
 #: original operator can be preserved. Preserving ``|`` versus ``;`` matters:
@@ -103,6 +101,7 @@ _OPERATORS: tuple[str, ...] = tuple(op for op, _ in SEGMENT_SEPARATORS)
 #: produce identical n-gram sets, which destroyed the pipe-to-shell signal that
 #: the whole curl-pipe-shell category depends on.
 SEGMENT_SPLIT_RE = re.compile(r"([;|&]+|[\r\n]+)")
+
 
 # Escape sequences. Ordered alternation: CSI and OSC must be tried before the
 # generic two-character escape branch, otherwise ESC[ would match as a
@@ -329,20 +328,40 @@ def _normalise_segment(value: str) -> str:
     return _SPACE_RUN_RE.sub(" ", lowered).strip(" ")
 
 
-def _canonical_operator(token: str) -> str:
-    """Map a captured operator run to its canonical spaced form.
+def _split_operators(token: str) -> list[str]:
+    """Break an operator run into canonical, individually-spaced operators.
 
-    ``&&`` stays ``&&``, a lone ``&`` becomes ``&``, a newline becomes the
-    sequence operator, and ``|`` stays distinct from ``;``. That last part is
-    why this function exists: collapsing every operator to one separator made
-    ``curl x | sh`` and ``curl x ; sh`` identical, which destroyed the
-    pipe-to-shell signal the whole curl-pipe-shell category depends on.
+    Greedy longest-match on the two-character forms first, so ``&&`` and ``||``
+    survive intact, and each remaining single character becomes its own token.
+    That handles ``|&`` and the fork-bomb idiom ``:|:&`` correctly: those are
+    runs of adjacent *distinct* operators, not one long operator, and treating
+    them as one was mislabelling them.
     """
-    if "\n" in token or "\r" in token or ";" in token:
-        return " ; "
-    if "|" in token:
-        return " || " if token.count("|") >= 2 else " | "
-    return " && " if token.count("&") >= 2 else " & "
+    out: list[str] = []
+    index = 0
+    length = len(token)
+    while index < length:
+        char = token[index]
+        if "\n" in char or "\r" in char or char == ";":
+            out.append(" ; ")
+            index += 1
+        elif char == "|" and index + 1 < length and token[index + 1] == "|":
+            out.append(" || ")
+            index += 2
+        elif char == "&" and index + 1 < length and token[index + 1] == "&":
+            out.append(" && ")
+            index += 2
+        elif char == "|":
+            out.append(" | ")
+            index += 1
+        elif char == "&":
+            out.append(" & ")
+            index += 1
+        else:
+            # Should not happen: SEGMENT_SPLIT_RE only captures [;|&\r\n].
+            out.append(f" {char} ")
+            index += 1
+    return out
 
 
 def normalize(raw: str) -> Normalized:
@@ -372,7 +391,7 @@ def normalize(raw: str) -> Normalized:
     rebuilt: list[str] = []
     for index, piece in enumerate(pieces):
         if index % 2 == 1:
-            rebuilt.append(_canonical_operator(piece))
+            rebuilt.extend(_split_operators(piece))
             continue
         segment = _normalise_segment(piece)
         if segment:

@@ -349,18 +349,37 @@
     return lowered.replace(SPACE_RUN_RE, " ").replace(SPACE_TRIM_RE, "");
   }
 
-  /* Map a captured operator run to its canonical spaced form. Mirrors
-     _canonical_operator() in ml/src/drosh_ml/normalize.py. */
-  function canonicalOperator(token) {
-    if (token.indexOf("\n") !== -1 || token.indexOf("\r") !== -1 || token.indexOf(";") !== -1) {
-      return OPERATORS.nl;
+  /* Break an operator run into canonical, individually-spaced operators.
+     Greedy longest-match on the two-character forms first, so "&&" and "||"
+     survive intact, and each remaining single character becomes its own token.
+     Mirrors _split_operators() in ml/src/drosh_ml/normalize.py. */
+  function splitOperators(token) {
+    var out = [];
+    var i = 0;
+    var n = token.length;
+    while (i < n) {
+      var ch = token[i];
+      if (ch === "\n" || ch === "\r" || ch === ";") {
+        out.push(OPERATORS.nl);
+        i += 1;
+      } else if (ch === "|" && token[i + 1] === "|") {
+        out.push(OPERATORS.pipe2);
+        i += 2;
+      } else if (ch === "&" && token[i + 1] === "&") {
+        out.push(OPERATORS.and2);
+        i += 2;
+      } else if (ch === "|") {
+        out.push(OPERATORS.pipe);
+        i += 1;
+      } else if (ch === "&") {
+        out.push(OPERATORS.and);
+        i += 1;
+      } else {
+        out.push(" " + ch + " ");
+        i += 1;
+      }
     }
-    if (token.indexOf("|") !== -1) {
-      var pipes = token.split("|").length - 1;
-      return pipes >= 2 ? OPERATORS.pipe2 : OPERATORS.pipe;
-    }
-    var ampersands = token.split("&").length - 1;
-    return ampersands >= 2 ? OPERATORS.and2 : OPERATORS.and;
+    return out;
   }
 
   function normalize(raw) {
@@ -374,7 +393,7 @@
     var rebuilt = [];
     for (var i = 0; i < pieces.length; i++) {
       if (i % 2 === 1) {
-        rebuilt.push(canonicalOperator(pieces[i]));
+        rebuilt = rebuilt.concat(splitOperators(pieces[i]));
         continue;
       }
       var segment = normaliseSegment(pieces[i]);
@@ -441,7 +460,7 @@
     NORMALIZE_VERSION: "1",
     NGRAM_MIN: NGRAM_MIN,
     NGRAM_MAX: NGRAM_MAX,
-    canonicalOperator: canonicalOperator,
+    splitOperators: splitOperators,
     stripAnsi: stripAnsi,
     foldAscii: foldAscii,
     normalize: normalize,
