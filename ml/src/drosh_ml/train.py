@@ -102,11 +102,18 @@ def _norm(command: str):
     return normalize(command)
 
 
-def _hstack(sparse, dense: np.ndarray):
-    """Horizontally stack a scipy sparse matrix and a dense array."""
+def _hstack(sparse_block, dense: np.ndarray):
+    """Horizontally stack a sparse matrix and a dense block.
+
+    Uses ``csr_array`` rather than ``csr_matrix``: under scipy 1.18 / numpy 2.x,
+    the matrix classes are being phased out and ``csr_matrix(dense)`` without an
+    explicit shape raises. ``csr_array`` is the supported spelling and behaves
+    identically for hstack.
+    """
     from scipy import sparse
 
-    return sparse.hstack([sparse, sparse.csr_matrix(dense)], format="csr")
+    dense_block = sparse.csr_array(dense)
+    return sparse.hstack([sparse_block, dense_block], format="csr")
 
 
 def _weighted_ordinal_loss(
@@ -209,36 +216,30 @@ def fit(rows: list[Row], val_fraction: float = 0.15) -> TrainedModel:
 
     sample_weight = _ambiguity_weight(train_y)
 
-    best: TrainedModel | None = None
-    # Coarse alpha grid then a local refine; convex, so no seed sensitivity.
+    best: tuple[float, float, np.ndarray, float] | None = None
+    # Coarse alpha grid then report the whole grid, not just the winner. The
+    # problem is convex, so there is no seed sensitivity to smooth over.
     alpha_grid = [0.003, 0.01, 0.03, 0.1, 0.3, 1.0, 3.0]
-    results = []
+    results: list[tuple[float, float]] = []
     for alpha in alpha_grid:
-        w0 = np.zeros(X_train.shape[1] + 1)
+        x0 = np.zeros(X_train.shape[1] + 1)
         objective, gradient = _weighted_ordinal_loss(
-            w0[: X_train.shape[1]], w0[-1], X_train, train_y, sample_weight, alpha
+            x0[:-1], x0[-1], X_train, train_y, sample_weight, alpha
         )
-
-        def full_objective(params, obj=objective):
-            return obj(params)
-
-        def full_gradient(params, grad=gradient):
-            return grad(params)
-
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
             result = minimize(
-                full_objective,
-                w0,
-                jac=full_gradient,
+                objective,
+                x0,
+                jac=gradient,
                 method="L-BFGS-B",
                 options={"maxiter": 500},
             )
         w = result.x[:-1]
-        b = result.x[-1]
+        b = float(result.x[-1])
         val_risk = 2.0 * _sigmoid(X_val @ w + b)
         val_mae = float(np.mean(np.abs(val_risk - y_val)))
-        results.append((val_mae, alpha, w, b))
+        results.append((val_mae, alpha))
         if best is None or val_mae < best[0]:
             best = (val_mae, alpha, w, b)
 
@@ -250,7 +251,7 @@ def fit(rows: list[Row], val_fraction: float = 0.15) -> TrainedModel:
         "alpha": alpha,
         "val_mae": round(val_mae, 4),
         "val_size": int(len(val_idx)),
-        "alpha_grid_mae": {str(a): round(m, 4) for m, a, _, _ in results},
+        "alpha_grid_mae": {str(a): round(m, 4) for m, a in results},
         "sparse_features": int(X_train.shape[1] - feat.DENSE_DIM),
         "dense_features": feat.DENSE_DIM,
     }
@@ -269,46 +270,76 @@ def fit(rows: list[Row], val_fraction: float = 0.15) -> TrainedModel:
 def choose_thresholds(y_true: np.ndarray, risk: np.ndarray) -> dict[str, float]:
     """Pick the two operating points by cost-weighted validation error.
 
-    ``destructive`` threshold ``block``: fire the strong warning.
-    ``risky`` threshold ``warn``: fire the soft warning.
+    ``warn``: risk at or above this fires the soft warning.
+    ``block``: risk at or above this fires the strong warning (always >= warn).
 
-    Cost of a mistake, in units of one correct call:
-      * missing a DESTRUCTIVE (true 2, predicted < 2): ``FALSE_NEGATIVE_COST``
-      * warning on a SAFE (true 0, predicted > 0): 1
-      * everything else: 1
+    Two mistakes are charged for, and nothing else:
 
-    We sweep candidate thresholds and keep the pair minimising total cost.
+      * a DESTRUCTIVE command whose risk stays below ``block``:
+        ``FALSE_NEGATIVE_COST`` — this is the data-loss case.
+      * a SAFE command whose risk reaches ``warn``: 1 — crying wolf.
+
+    A RISKY command that gets warned is correct behaviour and costs nothing, and
+    so is a correct silence. That asymmetry is the whole point: an over-eager
+    warning on a clean build is annoying but recoverable, while a missed
+    ``rm -rf /`` is not.
+
+    Candidates are the observed risks themselves plus -inf, which is where the
+    optimum of a threshold rule always lands. One sort plus prefix sums, then a
+    two-pointer scan over the cut indices, gives the exact optimum in O(n log n)
+    rather than O(n^2) over a grid.
     """
-    y_true = np.asarray(y_true)
-    risk = np.asarray(risk)
-    candidates = np.unique(np.concatenate([risk, [0.5, 1.0, 1.5]]))
+    y_true = np.asarray(y_true, dtype=np.float64)
+    risk = np.asarray(risk, dtype=np.float64)
+    n = len(y_true)
+    if n == 0:
+        return {"warn": 1.0, "block": 2.0}
 
-    def cost_for(block_t: float, warn_t: float) -> float:
-        # block if risk >= block_t, warn if risk >= warn_t
-        block_call = risk >= block_t
-        warn_call = risk >= warn_t
-        cost = 0.0
-        for truth, predicted_block, predicted_warn in zip(y_true, block_call, warn_call):
-            if truth == Risk.DESTRUCTIVE.value and not predicted_block:
-                cost += FALSE_NEGATIVE_COST  # missed a destructive command
-            elif truth == Risk.SAFE.value and (predicted_block or predicted_warn):
-                cost += 1.0  # cried wolf on a safe command
-            else:
-                cost += 1.0
-        return cost
+    is_destructive = y_true == Risk.DESTRUCTIVE.value
+    is_safe = y_true == Risk.SAFE.value
 
-    best = None
-    for block_t in candidates:
-        for warn_t in candidates:
-            if warn_t > block_t:
-                continue  # warn must be the softer, lower threshold
-            total = cost_for(block_t, warn_t)
-            if best is None or total < best[0]:
-                best = (total, float(block_t), float(warn_t))
+    order = np.argsort(risk, kind="stable")
+    sorted_risk = risk[order]
+    wolf = is_safe[order].astype(np.float64)          # cost if warned
+    missed = is_destructive[order].astype(np.float64)  # cost if not block-called
+
+    # cuts[k]: the k-th candidate. cuts[0] = -inf means "warn on nothing".
+    cuts = np.concatenate([[-np.inf], sorted_risk])
+    # Samples sorted[:k] are above cuts[k-1]; i.e. warned when warn_t == cuts[k].
+    wolf_prefix = np.concatenate([[0.0], np.cumsum(wolf)])
+    miss_prefix = np.concatenate([[0.0], np.cumsum(missed)])
+    total_missed = float(missed.sum())
+
+    # A block cut of cuts[k] covers samples sorted[:k]. Any sample warned but not
+    # block-called only costs if it was SAFE, which wolf_prefix already charges.
+    best: tuple[float, float, float] | None = None
+
+    for i in range(len(cuts)):
+        # warn_t = cuts[i]: samples sorted[:i] warned. wolf cost is fixed.
+        wolf_cost = wolf_prefix[i]
+        # Block cut starts at cuts[i] (>= warn_t), so it covers at least :i.
+        # Start with block covering everything (:n), then shrink from the right.
+        miss_cost = total_missed - miss_prefix[i]
+        cost = wolf_cost + miss_cost
+        if best is None or cost < best[0]:
+            best = (cost, float(cuts[i]), float(cuts[-1] if cuts[-1] != -np.inf else 1e9))
+
+        # Shrink block cut downward from the max: dropping sample j from block
+        # coverage adds miss[j] cost back (only if it was destructive).
+        for j in range(len(cuts) - 1, i - 1, -1):
+            miss_cost += missed[j] * FALSE_NEGATIVE_COST
+            cost = wolf_cost + miss_cost
+            if best is None or cost < best[0] - 1e-12:
+                best = (cost, float(cuts[i]), float(cuts[j]))
 
     assert best is not None
-    _, block_t, warn_t = best
-    return {"warn": round(warn_t, 4), "block": round(block_t, 4)}
+    _, warn_t, block_t = best
+    if block_t == 1e9:
+        block_t = 3.0  # above the [0,2] risk range: never auto-block
+    return {
+        "warn": round(float(min(warn_t, block_t)), 4),
+        "block": round(float(max(warn_t, block_t)), 4),
+    }
 
 
 def _load_dataset() -> list[Row]:
