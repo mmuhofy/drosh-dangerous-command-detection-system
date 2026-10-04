@@ -414,20 +414,29 @@ def choose_thresholds(y_true: np.ndarray, risk: np.ndarray) -> dict[str, float]:
         ]
     )
 
-    # Suffix counts: how many samples of each class a cut of index k misses.
+    # What a cut of index k misses. Note the direction differs per term:
+    #
+    #   candidates[k] warns samples [k:], so
+    #     * SAFE      in [k:] is warned  -> false alarm   (suffix)
+    #     * RISKY     in [0, k) is silent -> missed warn (PREFIX)
+    #     * DESTRUCTIVE in [j:] is unblocked -> missed block (suffix)
+    #
+    # Using a suffix for the missed-warning term scores every RISKY command as
+    # missed at the most sensitive threshold and as warned at the least, which
+    # inverts the gradient and drags both thresholds to the ends of the range.
     safe_suffix = np.concatenate([np.cumsum(is_safe[::-1])[::-1], [0.0]])
-    risky_suffix = np.concatenate([np.cumsum(is_risky[::-1])[::-1], [0.0]])
+    risky_prefix = np.concatenate([[0.0], np.cumsum(is_risky)])
     destr_suffix = np.concatenate([np.cumsum(is_destructive[::-1])[::-1], [0.0]])
 
     best_cost = float("inf")
     best_i, best_j = n, n
 
     for i in range(n + 1):
-        # Samples [i:] are not warned: safe ones are false alarms, risky ones are
-        # missed warnings.
-        base = safe_suffix[i] + risky_suffix[i] * MISSED_RISK_COST
+        # Safe samples in [i:] are warned and cost a false alarm; risky samples in
+        # [0, i) are silent and cost a missed warning.
+        base = safe_suffix[i] + risky_prefix[i] * MISSED_RISK_COST
         for j in range(i, n + 1):
-            # Samples [j:] are not blocked: destructive ones are misses.
+            # Destructive samples in [j:] are warned but not blocked.
             cost = base + destr_suffix[j] * FALSE_NEGATIVE_COST
             if cost < best_cost - 1e-12:
                 best_cost = cost
