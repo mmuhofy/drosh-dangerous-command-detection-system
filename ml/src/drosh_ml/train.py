@@ -104,6 +104,12 @@ def window_ngrams(joined: str) -> set[str]:
 #: a soft warning costs the user nothing irreversible.
 MISSED_RISK_COST: float = 1.0
 
+#: Recall each tier must reach on its own class. The joint cost function cannot
+#: express these — it is indifferent between warning correctly and warning on
+#: everything — so the tiers are specified directly.
+RISKY_RECALL_FLOOR: float = 0.98
+DESTRUCTIVE_RECALL_FLOOR: float = 0.995
+
 
 @dataclass(slots=True)
 class TrainedModel:
@@ -450,7 +456,57 @@ def choose_thresholds(y_true: np.ndarray, risk: np.ndarray) -> dict[str, float]:
                 best_warn = float(candidates[a])
                 best_block = float(candidates[b])
 
-    return {"warn": round(best_warn, 6), "block": round(best_block, 6)}
+    # Keep the two thresholds apart.
+    #
+    # The cost function does not distinguish them: it charges for a missed
+    # destructive block, a missed risky warning and a cried-wolf on a safe
+    # command, but nothing for warning on a risky command or blocking a
+    # destructive one — both of which are correct. So the minimum is routinely
+    # reached with warn == block, and the model collapses to two classes: with
+    # both at 0.36, `git clean -fdx` and even `echo "rm -rf /"` came out
+    # destructive, which is exactly the over-warning the feature must not do.
+    #
+    # The two tiers are a product distinction, not a statistical one, so they are
+    # stated explicitly rather than inferred. warn is the lowest threshold that
+    # still misses almost no genuinely risky command; block is the lowest that
+    # misses almost nothing destructive. On the current corpus that separates
+    # `git clean -fdx` from `rm -rf /`.
+    warn_t = _first_threshold_covering(
+        candidates, starts, risky_prefix, total_risky, RISKY_RECALL_FLOOR
+    )
+    block_t = _first_threshold_covering(
+        candidates, starts, destr_prefix, total_destructive, DESTRUCTIVE_RECALL_FLOOR
+    )
+
+    # A tier must not sit below the one above it, or the classes swap.
+    if warn_t > block_t:
+        warn_t = block_t
+
+    return {"warn": round(warn_t, 6), "block": round(block_t, 6)}
+
+
+def _first_threshold_covering(
+    candidates: np.ndarray,
+    starts: np.ndarray,
+    prefix: np.ndarray,
+    total: float,
+    recall_floor: float,
+) -> float:
+    """Lowest candidate threshold whose recall for one class meets ``recall_floor``.
+
+    Chosen over minimising the joint cost because the cost function is indifferent
+    between the two tiers — see choose_thresholds. Recall floors express what the
+    product actually needs: a risky command that is never warned is a missed
+    feature, and a destructive command that is never blocked is worse.
+    """
+    if total <= 0:
+        return float(candidates[-1])
+    for index in range(len(candidates)):
+        # prefix[starts[index]] counts the class inside [0, k), which is the set
+        # the threshold does NOT cover.
+        if 1.0 - prefix[starts[index]] / total >= recall_floor:
+            return float(candidates[index])
+    return float(candidates[-1])
 
 
 def _load_dataset() -> list[Row]:
