@@ -68,12 +68,16 @@ jobs:
   # scikit-learn and numpy have both changed estimator internals and dtype
   # handling across minor versions. This job re-trains and re-evaluates so a
   # dependency bump cannot silently change what the exported model produces.
-  # It only runs once a model actually exists.
+  #
+  # The guard lives inside the scripts rather than in a job- or step-level `if`:
+  # `hashFiles` is rejected by the workflow validator in `if` expressions
+  # ("Unrecognized function: 'hashFiles'"), so the presence check is done by the
+  # shell, after checkout, where it works. Until Phase 4 lands
+  # ml/src/drosh_ml/export.py this job is a documented no-op.
   regression:
     name: Model regression
     runs-on: ubuntu-latest
     timeout-minutes: 20
-    if: hashFiles('ml/src/drosh_ml/export.py') != ''
     steps:
       - uses: actions/checkout@v4
 
@@ -87,11 +91,20 @@ jobs:
           python -m pip install -e ml
           python -m pip install pytest
 
-      - name: Train and evaluate
-        run: bash scripts/train.sh
+      - name: Train, evaluate and export
+        run: |
+          if [ ! -f ml/src/drosh_ml/export.py ]; then
+            echo "Phase 4 (export.py) not landed yet — model regression is a no-op."
+            exit 0
+          fi
+          bash scripts/train.sh
 
       - name: Export must be byte-identical
         run: |
+          if [ ! -f html/command-risk/risk-model.js ]; then
+            echo "No exported model to compare against."
+            exit 0
+          fi
           git diff --exit-code -- html/command-risk/risk-model.js \
                             html/command-risk/golden-vectors.json \
             || (echo "::error::exported model changed — review and commit deliberately"; exit 1)
