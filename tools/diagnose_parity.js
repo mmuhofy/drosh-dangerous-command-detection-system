@@ -19,12 +19,15 @@ vm.runInThisContext(fs.readFileSync("html/command-risk/risk-scoring.js", "utf8")
 
 const R = globalThis.DroshRisk;
 const model = R.buildModel(globalThis.DROSH_RISK_MODEL);
-const reference = JSON.parse(fs.readFileSync("tools/dense_reference.json", "utf8"));
+const ref = JSON.parse(fs.readFileSync("tools/dense_reference.json", "utf8"));
+const reference = ref.cases;
+globalThis.__denseNames = ref.denseNames;
 
 const names = R.LABELS ? null : null;
 let worstCount = 0;
 
 for (const entry of reference) {
+  const NAMES = globalThis.__denseNames;
   const norm = R.normalize(entry.command);
   const js = R.denseFeatures(norm);
   const py = entry.dense;
@@ -39,7 +42,6 @@ for (const entry of reference) {
   const label = diffs.length ? "DIFF" : "ok  ";
   console.log(`${label} ${String(entry.command).slice(0, 44).padEnd(46)} ${diffs.length} feature(s)`);
   for (const d of diffs) {
-    const name = globalThis.__DENSE_NAMES ? globalThis.__DENSE_NAMES[d.i] : `#${d.i}`;
     console.log(`       [${d.i}] js=${d.js} py=${d.py}`);
     worstCount++;
   }

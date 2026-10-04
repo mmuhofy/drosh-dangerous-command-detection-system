@@ -40,6 +40,10 @@ COMMANDS = [
     "git reset --hard HEAD~5",
     "history -c",
     "python3 -c 'print(1)'",
+    # The worst-parity case reported by diagnose_parity.py on the full golden
+    # set: 6.145e-2. Dense features agreed here, so the divergence is in the
+    # sparse block — this case isolates it.
+    "sed --interactive '' 's/foo/bar/g' src/*.js",
 ]
 
 

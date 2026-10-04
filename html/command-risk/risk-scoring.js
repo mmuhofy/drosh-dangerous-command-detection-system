@@ -533,7 +533,7 @@
     var SYSTEM = /(?:^|[\s;&|(])\/(?:etc|usr|var|bin|sbin|boot|lib|opt|srv|root|home|sys|proc|dev|sdcard|storage|data)(?:\/|\b)/;
     var HOME = /(?:^|[\s;&|(])(~|\$\{?HOME\}?|\$\{?PWD\}?|\$\(pwd\))(?:\/|\b|$)/;
     var WILDCARD = /(?:^|[\s;&|(])\*(?:\.\*)?\*?(?:\/|$)/;
-    var RELATIVE = /(?:^|[\s;&|(])\.|\s\./;
+    var RELATIVE = new RegExp('(?:^|[\\s;&|(])\\./|\\s\\./|\\./');
     var DISPOSABLE = /node_modules|\bbuild\/?\b|\bdist\/?\b|\btarget\/?\b|\.gradle|\.venv|\bvenv\/?\b|__pycache__|\.pytest_cache|\.mypy_cache|\.next|\.nuxt|\.cache|vendor\/?\b|pods\/?\b|deriveddata|\.terraform|\bcoverage\b|\.tox|\.parcel-cache|\.turbo|\*\.o\b|\*\.class\b|\*\.pyc\b|\.ds_store|\*\.log\b|\*\.tmp\b|\*\.bak\b/;
     var BLOCKDEV = /\/dev\/(?:sd[a-z]|nvme\d|mmcblk|hd[a-z])/;
     var FSTABLE = /\b(?:fdisk|parted|sgdisk|gparted|blkdiscard|wipefs)\b/;
