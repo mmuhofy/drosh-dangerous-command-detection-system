@@ -133,8 +133,11 @@ def main() -> int:
             "  !! block esigi hicbir komutun asilabilecegi yerde: "
             "destructive sinifi TETIKLENMEZ"
         )
-    elif block_t > np.percentile(risk, 99.9):
-        add("  !! block esigi en ust %0.1 disinda: neredeyse hic tetiklenmez" % 0.1)
+    elif block_t > float(np.percentile(risk, 99.9)):
+        add(
+            "  !! block esigi en ust %0.1 disinda: neredeyse hic tetiklenmez"
+            % (100.0 * float((risk >= block_t).mean()))
+        )
 
     add("")
     add("=" * 78)
