@@ -428,16 +428,45 @@ def choose_thresholds(y_true: np.ndarray, risk: np.ndarray) -> dict[str, float]:
     risky_prefix = np.concatenate([[0.0], np.cumsum(is_risky)])
     destr_suffix = np.concatenate([np.cumsum(is_destructive[::-1])[::-1], [0.0]])
 
+    total_safe = float(is_safe.sum())
+    total_risky = float(is_risky.sum())
+    total_destructive = float(is_destructive.sum())
+
+    def warn_cost(k: int) -> float:
+        """Cost of setting the warn threshold at candidates[k].
+
+        The interior cases read straight off the sums: samples [k:] are warned,
+        so the safe ones there are false alarms and the risky ones in [0, k) are
+        missed warnings. The two sentinels are not interior cases and the sums
+        do not describe them — candidates[0] warns on *nothing* while
+        safe_suffix[0] counts every safe sample as warned, which is the exact
+        inverse. They are therefore spelled out.
+        """
+        if k == 0:
+            return total_risky * MISSED_RISK_COST
+        if k == n:
+            return 0.0
+        return safe_suffix[k] + risky_prefix[k] * MISSED_RISK_COST
+
+    def block_cost(k: int) -> float:
+        """Cost of setting the block threshold at candidates[k]."""
+        if k == 0:
+            return total_destructive * FALSE_NEGATIVE_COST
+        if k == n:
+            return 0.0
+        return destr_suffix[k] * FALSE_NEGATIVE_COST
+
     best_cost = float("inf")
     best_i, best_j = n, n
 
     for i in range(n + 1):
-        # Safe samples in [i:] are warned and cost a false alarm; risky samples in
-        # [0, i) are silent and cost a missed warning.
-        base = safe_suffix[i] + risky_prefix[i] * MISSED_RISK_COST
+        base = warn_cost(i)
         for j in range(i, n + 1):
-            # Destructive samples in [j:] are warned but not blocked.
-            cost = base + destr_suffix[j] * FALSE_NEGATIVE_COST
+            # Ordering is by value, not by index: candidates[0] is the high
+            # sentinel, so i < j does not imply warn <= block.
+            if candidates[j] < candidates[i]:
+                continue
+            cost = base + block_cost(j)
             if cost < best_cost - 1e-12:
                 best_cost = cost
                 best_i, best_j = i, j
