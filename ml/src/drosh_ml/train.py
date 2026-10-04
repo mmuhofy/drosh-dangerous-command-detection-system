@@ -473,10 +473,13 @@ def choose_thresholds(y_true: np.ndarray, risk: np.ndarray) -> dict[str, float]:
     # still misses almost no genuinely risky command; block is the lowest that
     # misses almost nothing destructive. On the current corpus that separates
     # `git clean -fdx` from `rm -rf /`.
-    warn_t = _first_threshold_covering(
+    # warn must catch almost every RISKY command; block almost every DESTRUCTIVE.
+    # Both floors are measured on their own class and against their own threshold:
+    # RISKY recall is measured at warn, DESTRUCTIVE recall at block.
+    warn_t = _threshold_hitting_recall(
         candidates, starts, risky_prefix, total_risky, RISKY_RECALL_FLOOR
     )
-    block_t = _first_threshold_covering(
+    block_t = _threshold_hitting_recall(
         candidates, starts, destr_prefix, total_destructive, DESTRUCTIVE_RECALL_FLOOR
     )
 
@@ -487,34 +490,42 @@ def choose_thresholds(y_true: np.ndarray, risk: np.ndarray) -> dict[str, float]:
     return {"warn": round(warn_t, 6), "block": round(block_t, 6)}
 
 
-def _first_threshold_covering(
+def _threshold_hitting_recall(
     candidates: np.ndarray,
     starts: np.ndarray,
     prefix: np.ndarray,
     total: float,
     recall_floor: float,
 ) -> float:
-    """Lowest candidate threshold whose recall for one class meets ``recall_floor``.
+    """Lowest candidate threshold whose recall on one class meets ``recall_floor``.
 
-    ``prefix[k]`` counts the class inside ``[0, k)``, which is exactly the set
-    the threshold at ``starts`` does *not* cover — so recall is
-    ``1 - prefix[starts] / total``.
+    ``prefix[k]`` counts the class inside ``[0, k)`` — the set the threshold at
+    index k does *not* cover — so recall there is ``1 - prefix[k] / total``.
+
+    Candidates ascend, and a low threshold covers everything. So the *lowest*
+    candidate already satisfies any recall floor, which is why scanning forwards
+    returns the floor of the score range and warns about everything.
+
+    The threshold that matters is the other end: the **highest** one that still
+    clears the floor. That is the most selective placement that misses no more
+    than ``1 - recall_floor`` of the class, which is what keeps false alarms
+    down. So this scans from the top and returns the first candidate that clears
+    the floor.
 
     Chosen over minimising the joint cost because the cost function is indifferent
-    between the two tiers (see choose_thresholds). A recall floor expresses what
-    the product actually needs: a risky command that is never warned is a missed
-    feature, and a destructive command that is never blocked is worse.
-
-    Candidate thresholds ascend, so the first one to clear the floor is the
-    lowest that does — which is what keeps false alarms down.
+    between the two tiers (see choose_thresholds). A recall floor states what the
+    product needs: a risky command that is never warned is a missed feature, and
+    a destructive command that is never blocked is worse.
     """
     if total <= 0:
+        # Nothing of this class in the data. Place the threshold above every score
+        # so it never fires.
         return float(candidates[-1])
-    for index in range(len(candidates)):
+    for index in range(len(candidates) - 1, -1, -1):
         recall = 1.0 - float(prefix[starts[index]]) / total
         if recall >= recall_floor:
             return float(candidates[index])
-    return float(candidates[-1])
+    return float(candidates[0])
 
 
 def _load_dataset() -> list[Row]:
