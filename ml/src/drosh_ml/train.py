@@ -325,8 +325,10 @@ def choose_thresholds(y_true: np.ndarray, risk: np.ndarray) -> dict[str, float]:
             best = (cost, float(cuts[i]), float(cuts[-1] if cuts[-1] != -np.inf else 1e9))
 
         # Shrink block cut downward from the max: dropping sample j from block
-        # coverage adds miss[j] cost back (only if it was destructive).
-        for j in range(len(cuts) - 1, i - 1, -1):
+        # coverage adds miss[j] cost back (only if it was destructive). Sample
+        # j is dropped when the cut moves from cuts[j] to cuts[j+1], and j ranges
+        # over 0..n-1 because cuts has n+1 entries while `missed` has n.
+        for j in range(n - 1, i - 1, -1):
             miss_cost += missed[j] * FALSE_NEGATIVE_COST
             cost = wolf_cost + miss_cost
             if best is None or cost < best[0] - 1e-12:
