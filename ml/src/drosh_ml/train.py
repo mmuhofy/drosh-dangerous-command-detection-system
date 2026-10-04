@@ -337,23 +337,24 @@ def choose_thresholds(y_true: np.ndarray, risk: np.ndarray) -> dict[str, float]:
     is_risky = (y_true == Risk.RISKY.value)[order]
     is_safe = (y_true == Risk.SAFE.value)[order]
 
-    # cuts[k] covers exactly samples[0:k]. -inf covers nothing, +inf covers all.
-    cuts = np.concatenate([[-np.inf], sorted_risk, [np.inf]])
+    # cuts[k] covers exactly samples[:k]. One sentinel below the minimum is
+    # enough: index 0 means "warn on nothing", index n means "warn on
+    # everything", which is the same as an infinite block. Two sentinels would
+    # make `cuts` longer than the suffix arrays and overrun them.
+    cuts = np.concatenate([[np.min(sorted_risk) - 1.0], sorted_risk])
 
-    # Costs of samples NOT covered by a cut of index k.
-    # warn cut i: samples[i:] are not warned.
-    #   cried wolf  = SAFE samples in [i:]
-    #   missed warn = RISKY samples in [i:]
-    # block cut j: destructive samples in [j:] are missed.
+    # Cost of the samples a cut of index k does NOT cover, i.e. samples[k:].
+    # warn cut i  -> cries wolf on SAFE[i:], misses warnings on RISKY[i:]
+    # block cut j -> misses DESTRUCTIVE[j:]
     safe_suffix = np.concatenate([np.cumsum(is_safe[::-1])[::-1], [0.0]])
     risky_suffix = np.concatenate([np.cumsum(is_risky[::-1])[::-1], [0.0]])
     destr_suffix = np.concatenate([np.cumsum(is_destructive[::-1])[::-1], [0.0]])
 
-    m = len(cuts)
+    m = len(cuts)  # == n + 1
     best_cost = float("inf")
-    best_i, best_j = 1, m - 1
+    best_i, best_j = 0, m - 1
 
-    for i in range(1, m):
+    for i in range(m):
         # Cost from warn not covering the tail: samples[i:] not warned.
         base = safe_suffix[i] * 1.0 + risky_suffix[i] * MISSED_RISK_COST
         for j in range(i, m):
@@ -365,10 +366,6 @@ def choose_thresholds(y_true: np.ndarray, risk: np.ndarray) -> dict[str, float]:
 
     warn_t = float(cuts[best_i])
     block_t = float(cuts[best_j])
-    if not np.isfinite(warn_t):
-        warn_t = float(np.min(risk)) - 1.0
-    if not np.isfinite(block_t):
-        block_t = 3.0
     return {
         "warn": round(float(min(warn_t, block_t)), 6),
         "block": round(float(max(warn_t, block_t)), 6),
