@@ -368,26 +368,28 @@ def choose_thresholds(y_true: np.ndarray, risk: np.ndarray) -> dict[str, float]:
 
     Candidate thresholds
     -------------------
-    ``candidates[k]`` warns exactly the ``k`` lowest-scoring samples, so index 0
-    is "warn on nothing" and index n is "warn on everything". For k in the middle
-    the value is the midpoint between two observed scores, which is unambiguous
-    where a score itself is not: with ties, a threshold equal to an observation
-    includes the whole tie group, and the midpoint between distinct values always
-    separates them.
+    Every distinct observed score is a candidate, plus one sentinel above the
+    maximum meaning "fire on nothing". For a candidate t the set that fires is
+    ``{risk >= t}``, whose start index comes from ``searchsorted`` rather than
+    from assuming it.
 
-    The array is strictly ascending, so ``best_i <= best_j`` implies
-    ``warn <= block`` and no post-hoc clamping is needed. An earlier version
-    encoded "warn on nothing" as ``min - 1`` and clamped the result with
-    min/max; under a ``>=`` rule ``min - 1`` warns on *everything*, which
-    inverted the search and shipped block=2.00 on a model whose maximum score was
-    1.9993 — a risk class that could never fire. ml/tests/test_thresholds.py
-    exists because of that, and it fails loudly if this regresses.
+    Assuming it is what broke the previous versions. The intuitive candidate for
+    index k is the midpoint between sorted_risk[k-1] and sorted_risk[k], on the
+    grounds that it fires on exactly [k:] — but as soon as those two scores are
+    equal the midpoint equals both, and it fires on the whole tie group instead.
+    With a corpus that has thousands of repeated scores, most candidates fired on
+    the wrong set.
 
     Cost
     ----
-    One sort, three suffix sums, then a scan over candidate pairs adding two
-    numbers each. O(n log n + k^2) with k = n+1 candidates; the inner term is a
-    float addition, not a masked array reduction.
+    ``k`` = first index that fires, so the counts are plain prefix sums:
+
+        false alarms   = safe       in [k, n)      = total_safe   - safe_prefix[k]
+        missed warning = risky      in [0, k)      = risky_prefix[k]
+        missed block   = destructive in [0, j)     = destructive_prefix[j]
+
+    One sort, three prefix sums, then a scan over candidate pairs. O(n log n + k^2)
+    with k the number of distinct scores, which is far smaller than n.
     """
     y_true = np.asarray(y_true, dtype=np.float64)
     risk = np.asarray(risk, dtype=np.float64)
@@ -401,76 +403,42 @@ def choose_thresholds(y_true: np.ndarray, risk: np.ndarray) -> dict[str, float]:
     is_risky = (y_true == Risk.RISKY.value)[order]
     is_safe = (y_true == Risk.SAFE.value)[order]
 
-    top = float(sorted_risk[-1])
-    candidates = np.concatenate(
-        [
-            # k = 0: warn on nothing. Must sit strictly above every score.
-            [top + 1.0],
-            # k = 1..n-1: the midpoint that splits sorted_risk[k-1] from [k].
-            sorted_risk[:-1] + (sorted_risk[1:] - sorted_risk[:-1]) / 2.0,
-            # k = n: warn on everything. The maximum itself suffices, because
-            # the rule is >=, so a score equal to the threshold fires.
-            [top],
-        ]
-    )
+    total_safe = float(is_safe.sum())
 
-    # Which samples a cut of index k covers, and which it therefore leaves out.
-    # candidates[k] fires on samples [k:], so:
-    #
-    #   safe in [i:]        is warned       -> false alarm    (SUFFIX)
-    #   risky in [0, i)     is silent       -> missed warning (PREFIX)
-    #   destructive in [0, j) is unblocked -> missed block    (PREFIX)
-    #
-    # Two of the three are prefixes, and getting that wrong on the block term
-    # charges a miss for every destructive command the threshold *does* catch.
-    # All three were suffix counts at some point; each inverted its own gradient
-    # and pushed its threshold to the end of the range.
-    safe_suffix = np.concatenate([np.cumsum(is_safe[::-1])[::-1], [0.0]])
+    safe_prefix = np.concatenate([[0.0], np.cumsum(is_safe)])
     risky_prefix = np.concatenate([[0.0], np.cumsum(is_risky)])
     destr_prefix = np.concatenate([[0.0], np.cumsum(is_destructive)])
 
-    total_safe = float(is_safe.sum())
-    total_risky = float(is_risky.sum())
-    total_destructive = float(is_destructive.sum())
-
-    def warn_cost(k: int) -> float:
-        """Cost of setting the warn threshold at candidates[k].
-
-        The interior cases read straight off the sums: samples [k:] are warned,
-        so the safe ones there are false alarms and the risky ones in [0, k) are
-        missed warnings. The two sentinels are not interior cases and the sums
-        do not describe them — candidates[0] warns on *nothing* while
-        safe_suffix[0] counts every safe sample as warned, which is the exact
-        inverse. They are therefore spelled out.
-        """
-        return safe_suffix[k] + risky_prefix[k] * MISSED_RISK_COST
-
-    def block_cost(k: int) -> float:
-        """Cost of setting the block threshold at candidates[k].
-
-        samples [k:] are blocked, so destructive commands in [0, k) are missed.
-        """
-        return destr_prefix[k] * FALSE_NEGATIVE_COST
+    # Distinct observed scores, plus a sentinel that fires on nothing.
+    distinct = np.unique(sorted_risk)
+    above_max = float(sorted_risk[-1]) + 1.0
+    candidates = np.concatenate([distinct, [above_max]])
+    # Start index of the set that fires for each candidate. The sentinel fires on
+    # nothing, so it starts at n.
+    starts = np.append(
+        np.searchsorted(sorted_risk, distinct, side="left"), n
+    ).astype(np.intp)
 
     best_cost = float("inf")
-    best_i, best_j = n, n
+    best_warn = above_max
+    best_block = above_max
 
-    for i in range(n + 1):
-        base = warn_cost(i)
-        for j in range(i, n + 1):
-            # Ordering is by value, not by index: candidates[0] is the high
-            # sentinel, so i < j does not imply warn <= block.
-            if candidates[j] < candidates[i]:
+    for a in range(len(candidates)):
+        k = starts[a]
+        false_alarms = total_safe - safe_prefix[k]
+        missed_warnings = risky_prefix[k] * MISSED_RISK_COST
+        base = false_alarms + missed_warnings
+
+        for b in range(a, len(candidates)):
+            if candidates[b] < candidates[a]:
                 continue
-            cost = base + block_cost(j)
+            cost = base + destr_prefix[starts[b]] * FALSE_NEGATIVE_COST
             if cost < best_cost - 1e-12:
                 best_cost = cost
-                best_i, best_j = i, j
+                best_warn = float(candidates[a])
+                best_block = float(candidates[b])
 
-    return {
-        "warn": round(float(candidates[best_i]), 6),
-        "block": round(float(candidates[best_j]), 6),
-    }
+    return {"warn": round(best_warn, 6), "block": round(best_block, 6)}
 
 
 def _load_dataset() -> list[Row]:
