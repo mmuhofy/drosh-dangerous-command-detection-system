@@ -58,6 +58,46 @@ __all__ = ["TrainedModel", "fit", "choose_thresholds", "main"]
 
 RANDOM_STATE = 20261004  # fixed so the pipeline is reproducible
 
+#: Separator between the two normalised views when feeding the vectoriser.
+#: A NUL cannot survive normalisation — every codepoint outside 0x20-0x7E is
+#: dropped — so no n-gram can straddle the join and each view contributes only
+#: its own internal n-grams.
+VIEW_JOIN = "\x00"
+
+#: Character n-gram window. Kept in sync with normalize.NGRAM_MIN/MAX and with
+#: the vectoriser's ngram_range; all three must agree or the vocabulary the
+#: vectoriser learned will never be hit at inference.
+NGRAM_MIN = 2
+NGRAM_MAX = 5
+
+
+def vectorizer_input(command: str) -> str:
+    """The exact string the vectoriser windows for one raw command.
+
+    This is the contract between the trainer and the runtime. It lives here,
+    next to the vectoriser that consumes it, rather than being duplicated in
+    export.py — two copies of "how do you turn a command into the string the
+    model was trained on" is exactly the kind of thing that drifts.
+    """
+    return VIEW_JOIN.join(_norm(command).views)
+
+
+def window_ngrams(joined: str) -> set[str]:
+    """Character n-grams over one already-joined string, presence semantics.
+
+    Distinct from normalize.presence_ngrams, which takes a *sequence of views*.
+    The vectoriser was fitted over the single joined string, so anything that
+    looks up a trained index must window that same single string.
+    """
+    found: set[str] = set()
+    length = len(joined)
+    for size in range(NGRAM_MIN, NGRAM_MAX + 1):
+        if length < size:
+            break
+        for start in range(length - size + 1):
+            found.add(joined[start : start + size])
+    return found
+
 #: Cost of failing to warn on a genuinely RISKY command, in units of one
 #: cried-wolf. Equal to 1: a missed ordinary warning is about as bad as a
 #: spurious one. Deliberately far below ``FALSE_NEGATIVE_COST`` because missing
@@ -109,8 +149,7 @@ def _build_matrix(
     dense_z = feat.standardise(dense_raw, dense_spec)
 
     # Feed the vectoriser exactly what the runtime will feed it.
-    texts = ["\u0000".join(_norm(c).views) for c in commands]
-    sparse = vectorizer.transform(texts)
+    sparse = vectorizer.transform([vectorizer_input(c) for c in commands])
     matrix = _hstack(sparse, dense_z)
     return matrix, vectorizer, dense_spec
 
@@ -227,7 +266,7 @@ def fit(rows: list[Row], val_fraction: float = 0.15) -> TrainedModel:
         lowercase=False,
         dtype=np.float64,
     )
-    vectorizer.fit(["\u0000".join(_norm(c).views) for c in train_cmds])
+    vectorizer.fit([vectorizer_input(c) for c in train_cmds])
 
     X_train, vectorizer, dense_spec = _build_matrix(
         train_cmds, vectorizer, None, fit_dense=True
