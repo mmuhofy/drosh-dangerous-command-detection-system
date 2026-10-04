@@ -40,8 +40,9 @@ import numpy as np
 from . import NORMALIZE_VERSION
 from . import features as feat
 from . import train as train_mod
-from . import __init__ as pkg
+
 from .build_dataset import REPO_ROOT, Row
+from . import MODEL_FORMAT_VERSION
 from .normalize import normalize
 from .train import VIEW_JOIN, _load_dataset, window_ngrams
 
@@ -283,7 +284,7 @@ def export_model(model) -> dict:
  * and one add per n-gram. No runtime dependency, no fetch, no build step.
  */
 window.DROSH_RISK_MODEL = {{
-  version: {pkg.MODEL_FORMAT_VERSION},
+  version: {MODEL_FORMAT_VERSION},
   normalizeVersion: "{NORMALIZE_VERSION}",
   trainedAt: "{_git_sha()}",
   alpha: {_js_number(model.alpha)},
