@@ -3,7 +3,7 @@
   "image": "mcr.microsoft.com/devcontainers/python:1-3.12-bookworm",
   "features": {
     "ghcr.io/devcontainers/features/node:1": {
-      "version": "lts"
+      "version": "22"
     }
   },
   "onCreateCommand": "bash scripts/bootstrap.sh",

@@ -10,6 +10,7 @@ on:
       - "ml/**"
       - "html/command-risk/**"
       - "scripts/**"
+      - ".github/**"
 
 concurrency:
   group: contract-tests-${{ github.ref }}
@@ -30,7 +31,7 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: "lts"
+          node-version: "22"
 
       - name: Install
         run: |
