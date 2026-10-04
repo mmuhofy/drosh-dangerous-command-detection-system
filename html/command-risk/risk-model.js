@@ -9,7 +9,7 @@
 window.DROSH_RISK_MODEL = {
   version: 1,
   normalizeVersion: "1",
-  trainedAt: "6e143e1",
+  trainedAt: "6f9e5fa",
   alpha: 0.003,
   valMae: 0.0738,
   ngramMin: 2,
