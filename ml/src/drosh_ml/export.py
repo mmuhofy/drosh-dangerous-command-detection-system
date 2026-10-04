@@ -272,8 +272,15 @@ def _js_number(value: float, digits: int = 12) -> str:
     golden fixture cannot assert 1e-9, and a tolerance nobody can meet is worse
     than no tolerance because it trains people to ignore the check.
 
-    Go floats are IEEE754 doubles, so full double precision round-trips exactly.
+    IEEE754 doubles round-trip exactly through a decimal literal that has enough
+    digits, so this is exact rather than merely close.
     """
+    text = f"{value:.{digits}f}"
+    # Strip trailing zeros but keep at least one digit, so the literal stays a
+    # float in JS rather than becoming an integer.
+    if "." in text:
+        text = text.rstrip("0").rstrip(".")
+    return text if text not in ("", "-") else "0"
 
 
 def export_model(model) -> dict:
@@ -374,7 +381,6 @@ window.DROSH_RISK_MODEL = {{
         "vocab_original": sparse_dim,
         "dense_dim": len(dense_weights),
         "golden_count": len(golden_rows),
-        "fold_max_error": 0.0,
         "thresholds": warnings_map,
     }
 
