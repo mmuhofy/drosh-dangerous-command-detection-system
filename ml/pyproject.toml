@@ -16,6 +16,7 @@ authors = [{ name = "Muhofy", email = "muhofy@drosh.dev" }]
 dependencies = [
   "scikit-learn>=1.5,<2",
   "numpy>=1.26",
+  "scipy>=1.11",
   "joblib>=1.4",
 ]
 
