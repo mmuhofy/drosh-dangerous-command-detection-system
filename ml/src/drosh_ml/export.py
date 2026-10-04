@@ -82,9 +82,22 @@ def _assert_fold_is_exact(model) -> np.ndarray:
     Returns the folded sparse coefficients. Raises if the fold is wrong.
     """
     vectorizer = model.vectorizer
-    idf = vectorizer.idf_  # shape == n_features
-    sparse_w = model.weights[: len(idf)]
-    dense_w = model.weights[len(idf) :]
+    # Slice on the vocabulary size, not on idf_. They are equal for a fitted
+    # TfidfVectorizer, but len(idf_) as the split point is an implicit coupling
+    # to sklearn internals; len(vocabulary_) is the thing that actually indexes
+    # into it.
+    sparse_dim = len(vectorizer.vocabulary_)
+    idf = vectorizer.idf_
+    sparse_w = model.weights[:sparse_dim]
+    dense_w = model.weights[sparse_dim:]
+
+    assert len(idf) == sparse_dim, (
+        f"idf_ has {len(idf)} entries but the vocabulary has {sparse_dim}; "
+        "the weight split would be wrong."
+    )
+    assert dense_w.shape == (feat.DENSE_DIM,), (
+        f"dense weight block is {dense_w.shape}, expected ({feat.DENSE_DIM},)"
+    )
 
     folded = sparse_w * idf
 
