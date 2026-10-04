@@ -398,9 +398,25 @@ def main() -> int:
     print(f"    thresholds   : warn={model.thresholds['warn']} block={model.thresholds['block']}")
     print(f"    wrote {report_path.relative_to(REPO_ROOT)}")
 
+    # Persist as a plain dict, not the dataclass. A dataclass pickled while
+    # running as `__main__` records its class as `__main__.TrainedModel`, which
+    # cannot be unpickled from any other entry point — that broke the first
+    # artifact this pipeline produced. export.py refits in-process instead, so
+    # this file is for inspection rather than for loading.
     import joblib
 
-    joblib.dump(model, ARTIFACTS / "model.joblib")
+    joblib.dump(
+        {
+            "alpha": model.alpha,
+            "intercept": model.intercept,
+            "thresholds": model.thresholds,
+            "metrics": model.metrics,
+            "vectorizer": model.vectorizer,
+            "dense_spec": model.dense_spec,
+            "weights": model.weights,
+        },
+        ARTIFACTS / "model.joblib",
+    )
     print(f"    wrote {(ARTIFACTS / 'model.joblib').relative_to(REPO_ROOT)}")
     return 0
 

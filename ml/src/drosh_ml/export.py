@@ -37,6 +37,7 @@ from pathlib import Path
 
 import numpy as np
 
+from . import NORMALIZE_VERSION
 from . import features as feat
 from . import train as train_mod
 from . import __init__ as pkg
@@ -210,8 +211,6 @@ def _js_number(value: float, digits: int = 6) -> str:
 
 def export_model(model) -> dict:
     """Write ``risk-model.js`` and ``golden-vectors.json``. Returns metadata."""
-    from .normalize import NORMALIZE_VERSION, normalize
-
     folded = _assert_fold_is_exact(model)
 
     vocab = model.vectorizer.vocabulary_
