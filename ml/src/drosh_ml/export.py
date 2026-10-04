@@ -119,7 +119,7 @@ def _assert_fold_is_exact(model) -> np.ndarray:
         # Row-vector times column-vector: dense_z is (1, D), dense_w is (D,).
         # (D,) @ (1, D) is not a valid matmul — the contraction axes do not
         # line up — so the row is indexed out first.
-        total = float(dense_z @ dense_w)
+        total = float((dense_z @ dense_w)[0])
         # Window the same joined string the vectoriser was fitted on, or the
         # lookup below misses every n-gram that straddles the two views.
         for gram in presence_ngrams(joined_views(norm)):
