@@ -16,7 +16,8 @@
         </p>
         <div class="badges">
           <span class="badge wait" id="badge-model">model: bekleniyor</span>
-          <span class="badge wait" id="badge-selftest">parite: bekleniyor</span>
+          <span class="badge wait" id="badge-parity">parite: bekleniyor</span>
+          <span class="badge wait" id="badge-selftest">kurallar: bekleniyor</span>
           <span class="badge" id="badge-version">normalize v—</span>
         </div>
       </header>
@@ -81,7 +82,8 @@
         "use strict";
 
         var Risk = window.DroshRisk;
-        var model = window.DROSH_RISK_MODEL || null;
+        var blob = window.DROSH_RISK_MODEL || null;
+        var model = null;
         var input = document.getElementById("cmd");
         var verdict = document.getElementById("verdict");
 
@@ -104,15 +106,53 @@
         badgeSelf.className = "badge ok";
         badgeSelf.textContent = "parite: " + Risk.NORMALIZE_VERSION + " kuralları aktif";
 
-        if (model && Risk.score) {
+        if (blob && Risk.buildModel && Risk.score) {
+          model = Risk.buildModel(blob);
           badgeModel.className = "badge ok";
-          badgeModel.textContent = "model: v" + model.version + " (" + model.trainedOn + ")";
-        } else if (model && !Risk.score) {
+          badgeModel.textContent =
+            "model: v" + blob.version + " \u00b7 " + model.vocab.length.toLocaleString("tr") + " n-gram \u00b7 " + blob.trainedAt;
+        } else if (blob) {
           badgeModel.className = "badge bad";
-          badgeModel.textContent = "model: var ama scorer uygulanmamış";
+          badgeModel.textContent = "model yüklendi ama scorer eksik";
         } else {
-          badgeModel.className = "badge wait";
-          badgeModel.textContent = "model: risk-model.js yok (Faz 4)";
+          badgeModel.className = "badge bad";
+          badgeModel.textContent = "model: risk-model.js bulunamad\u0131";
+        }
+
+        // Parite bandi ger\u00e7ek modeli kendi skoruyla dener. 300 komut, taray\u0131c\u0131da,
+        // Python'un kaydetti\u011fi skorlarla. Ye\u011filse s\u00f6z konu\u015fur:
+        // "model taray\u0131c\u0131da \u00e7al\u0131\u015f\u0131yor" \u2014 yani e\u011fitimdeki model,
+        // telefonda \u00e7al\u0131\u015fan model de\u011fil ayn\u0131 \u015fey.
+        var badgeParity = document.getElementById("badge-parity");
+        if (!model) {
+          badgeParity.className = "badge wait";
+          badgeParity.textContent = "parite: model yok";
+        } else if (typeof fetch === "undefined") {
+          badgeParity.className = "badge wait";
+          badgeParity.textContent = "parite: fetch yok (file://) \u2014 sunucudan a\u00e7";
+        } else {
+          fetch("golden-vectors.json")
+            .then(function (r) {
+              return r.json();
+            })
+            .then(function (golden) {
+              var worst = 0;
+              for (var i = 0; i < golden.cases.length; i++) {
+                var c = golden.cases[i];
+                var got = Risk.score(model, Risk.normalize(c.command)).score;
+                var d = Math.abs(got - c.score);
+                if (d > worst) worst = d;
+              }
+              var pass = worst <= golden.tolerance;
+              badgeParity.className = "badge " + (pass ? "ok" : "bad");
+              badgeParity.textContent =
+                "parite: " + golden.count + " komut \u00b7 sapma " + worst.toExponential(1) +
+                (pass ? " \u2713" : " \u2717");
+            })
+            .catch(function (err) {
+              badgeParity.className = "badge bad";
+              badgeParity.textContent = "parite okunamad\u0131: " + err.message;
+            });
         }
 
         // --- samples ------------------------------------------------------
@@ -260,41 +300,13 @@
 
         function run() {
           var raw = input.value;
+          if (!model) {
+            document.getElementById("verdict").classList.remove("show");
+            input.focus();
+            return;
+          }
           var norm = Risk.normalize(raw);
-          var result = Risk.score ? Risk.score(model, norm) : stubScore(norm);
-          render(result, norm);
-        }
-
-        // Temporary stand-in so the interaction can be reviewed before the
-        // model exists. Clearly flagged in the UI — never mistaken for a result.
-        function stubScore(norm) {
-          var text = norm.text;
-          var reasons = [];
-          var s = -6;
-          [
-            ["rm -rf", /(^|;| )rm\s+-[a-z]*r[a-z]*f/, 4.2, "recursive + force silme"],
-            ["/", /(^|\s)\/(etc|usr|var|bin|sbin|boot|sys|proc)(\/|$)/, 3.1, "sistem yolu hedefi"],
-            ["dd if=", /dd\s+if=/, 4.8, "ham disk okuma"],
-            ["mkfs", /mkfs|mke2fs/, 5.0, "dosya sistemi biçimlendirme"],
-            ["fork bomb", /:\(\)\s*\{/, 5.5, "sonsuz süreç çatallaması"],
-            ["curl|sh", /(curl|wget)[^;]*\|\s*(ba)?sh/, 4.6, "uzaktan kod çalıştırma"],
-            ["chmod 777", /chmod\s+(-R\s+)?777/, 3.4, "herkese yazılabilir izin"],
-            [":/|&", /:\s*\|\s*:\s*&/, 4.0, "süreç çatallaması deseni"],
-          ].forEach(function (r) {
-            if (r[1].test(text)) {
-              s += r[2];
-              reasons.push({ feature: r[0], weight: r[2], description: r[3] });
-            }
-          });
-          var p = 1 / (1 + Math.exp(-s));
-          var key = p > 0.72 ? "destructive" : p > 0.38 ? "risky" : "safe";
-          var labels = { safe: "Güvenli", risky: "Şüpheli", destructive: "Tehlikeli" };
-          return {
-            score: p,
-            risk: { key: key, label: labels[key] },
-            reasons: reasons,
-            featureCount: Risk.presenceNgrams(norm.views).size,
-          };
+          render(Risk.score(model, norm), norm);
         }
 
         input.addEventListener("keydown", function (event) {
