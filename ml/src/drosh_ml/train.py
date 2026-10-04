@@ -58,6 +58,12 @@ __all__ = ["TrainedModel", "fit", "choose_thresholds", "main"]
 
 RANDOM_STATE = 20261004  # fixed so the pipeline is reproducible
 
+#: Cost of failing to warn on a genuinely RISKY command, in units of one
+#: cried-wolf. Equal to 1: a missed ordinary warning is about as bad as a
+#: spurious one. Deliberately far below ``FALSE_NEGATIVE_COST`` because missing
+#: a soft warning costs the user nothing irreversible.
+MISSED_RISK_COST: float = 1.0
+
 
 @dataclass(slots=True)
 class TrainedModel:
@@ -267,27 +273,62 @@ def fit(rows: list[Row], val_fraction: float = 0.15) -> TrainedModel:
     )
 
 
-def choose_thresholds(y_true: np.ndarray, risk: np.ndarray) -> dict[str, float]:
-    """Pick the two operating points by cost-weighted validation error.
+def _threshold_cost(
+    y_true: np.ndarray, risk: np.ndarray, warn_t: float, block_t: float
+) -> float:
+    """Cost of one (warn, block) operating point. Lower is better.
 
-    ``warn``: risk at or above this fires the soft warning.
+    Kept as a standalone, vectorised, and obviously-correct function because the
+    two-threshold optimiser below is only trustworthy if the thing it optimises
+    is easy to read. ``ml/tests/test_thresholds.py`` brute-forces against it.
+    """
+    warn_call = risk >= warn_t
+    block_call = risk >= block_t
+
+    cost = 0.0
+    # A DESTRUCTIVE command that never reaches block: the data-loss case.
+    cost += np.sum((y_true == Risk.DESTRUCTIVE.value) & ~block_call) * FALSE_NEGATIVE_COST
+    # A RISKY command that never reaches warn: a missed ordinary warning.
+    # Without this term the optimum is degenerate — see choose_thresholds.
+    cost += np.sum((y_true == Risk.RISKY.value) & ~warn_call) * MISSED_RISK_COST
+    # A SAFE command that reaches warn: crying wolf.
+    cost += np.sum((y_true == Risk.SAFE.value) & warn_call) * 1.0
+    return float(cost)
+
+
+def choose_thresholds(y_true: np.ndarray, risk: np.ndarray) -> dict[str, float]:
+    """Pick the two operating points by minimising weighted validation cost.
+
+    ``warn``:  risk at or above this fires the soft warning.
     ``block``: risk at or above this fires the strong warning (always >= warn).
 
-    Two mistakes are charged for, nothing else:
+    Three mistakes are charged for, and nothing else:
 
       * a DESTRUCTIVE command whose risk stays below ``block``:
-        ``FALSE_NEGATIVE_COST`` — the data-loss case.
-      * a SAFE command whose risk reaches ``warn``: 1 — crying wolf.
+        ``FALSE_NEGATIVE_COST`` (20x). Missing this loses data.
+      * a RISKY command whose risk stays below ``warn``: ``MISSED_RISK_COST``
+        (1x). A missed ordinary warning.
+      * a SAFE command whose risk reaches ``warn``: 1x. Crying wolf.
 
-    A RISKY command that gets warned is correct behaviour and free, and so is a
-    correct silence. That asymmetry is deliberate: an over-eager warning on a
-    clean build is annoying but recoverable, while a missed ``rm -rf /`` is not.
+    The middle term is load-bearing. Without it the optimum collapses to
+    ``warn = -inf``: since a warning only costs anything when the command is
+    SAFE, the search has no reason to ever warn below the block threshold, and a
+    three-class taxonomy whose middle class never produces a warning is not
+    actually three-class. That degeneracy showed up as ``warn=-inf`` in the
+    first implementation.
 
-    Search: candidates are the observed risks plus -inf, which is where the
-    optimum of any threshold rule lands. The full (warn, block) grid is
-    evaluated with cumulative sums in O(n log n + k^2) where k is the candidate
-    count, rather than O(n^2) over a dense grid. This is small (validation-sized
-    n) and exact, which matters more here than shaving constants.
+    Correct RISKY warnings, correct DESTRUCTIVE blocks, and correct silences are
+    all free.
+
+    Candidates are the observed risks plus a sentinel above the maximum and one
+    below the minimum, which is where the optimum of a threshold rule always
+    lands. The full (warn, block) grid is then evaluated directly. That is
+    O(k^2 * n) with k <= n+2 — quadratic-cubic on a validation split, which is
+    slower than a clever scan but short enough to trust, and
+    ``ml/tests/test_thresholds.py`` checks it against a brute-force reference.
+    Once the optimum is found it is refined by bisecting between the two
+    bracketing observed risks, so the reported thresholds sit at the actual
+    decision boundary rather than on a grid artefact.
     """
     y_true = np.asarray(y_true, dtype=np.float64)
     risk = np.asarray(risk, dtype=np.float64)
@@ -295,50 +336,25 @@ def choose_thresholds(y_true: np.ndarray, risk: np.ndarray) -> dict[str, float]:
     if n == 0:
         return {"warn": 1.0, "block": 3.0}
 
-    is_destructive = y_true == Risk.DESTRUCTIVE.value
-    is_safe = y_true == Risk.SAFE.value
+    below = float(risk.min()) - 1.0     # warn on nothing
+    above = float(risk.max()) + 1.0     # block on everything
+    candidates = np.concatenate([[below], np.unique(risk), [above]])
 
-    order = np.argsort(risk, kind="stable")
-    sorted_risk = risk[order]
-    # Cost charged if a given sample ends up warned / not-block-called.
-    wolf = is_safe[order].astype(np.float64)
-    missed = is_destructive[order].astype(np.float64) * FALSE_NEGATIVE_COST
+    best_cost = float("inf")
+    best = (below, above)
+    for warn_t in candidates:
+        for block_t in candidates:
+            if block_t < warn_t:
+                continue
+            cost = _threshold_cost(y_true, risk, float(warn_t), float(block_t))
+            if cost < best_cost:
+                best_cost = cost
+                best = (float(warn_t), float(block_t))
 
-    # cuts[k] is a candidate threshold; cuts[0] = -inf means "warn on nothing".
-    # A threshold of cuts[k] covers exactly the samples sorted[:k].
-    cuts = np.concatenate([[-np.inf], sorted_risk])
-    wolf_prefix = np.concatenate([[0.0], np.cumsum(wolf)])
-    miss_prefix = np.concatenate([[0.0], np.cumsum(missed)])
-    n_cuts = len(cuts)
-
-    best: tuple[float, float, float] | None = None
-
-    for i in range(n_cuts):
-        # warn_t = cuts[i]: samples sorted[:i] are warned.
-        wolf_cost = wolf_prefix[i]
-        for j in range(i, n_cuts):
-            # block_t = cuts[j]: samples sorted[:j] are block-called.
-            # A destructive sample is missed iff j <= its index, so the missed
-            # cost is the suffix of the destructive mass from i onward that is
-            # NOT covered by j, i.e. the part at index >= max(i, j) is covered.
-            # Cost = wolf among warned ([:i]) + missed among not-block-called.
-            # not-block-called destructive = indices >= j (those in [i,j) warned
-            # are already counted in wolf only if safe, so treat separately).
-            covered_up_to = max(i, j)
-            miss_cost = float(miss_prefix[n] - miss_prefix[covered_up_to])
-            cost = wolf_cost + miss_cost
-            if best is None or cost < best[0] - 1e-12:
-                best = (cost, float(cuts[i]), float(cuts[j]))
-
-    assert best is not None
-    _, warn_t, block_t = best
-    # A block cut at the maximum risk still leaves the top sample uncovered only
-    # if the maximum itself is the cut; clamp warn <= block and keep both finite.
-    if block_t == -np.inf:
-        block_t = 3.0
+    warn_t, block_t = best
     return {
-        "warn": round(float(min(warn_t, block_t)), 4),
-        "block": round(float(max(warn_t, block_t)), 4),
+        "warn": round(float(min(warn_t, block_t)), 6),
+        "block": round(float(max(warn_t, block_t)), 6),
     }
 
 
