@@ -108,6 +108,44 @@ def _probe_commands() -> list[str]:
     ]
 
 
+def _score_pruned(model, vocab: dict[str, int], coef: list[float], commands: list[str]) -> np.ndarray:
+    """Risk in [0, 2] using the *pruned* coefficient set — what the browser computes.
+
+    The fixture has to describe the shipped model, not the fitted one. Pruning
+    drops coefficients below :data:`COEF_FLOOR`, so a command whose score leans on
+    several tiny contributions scores slightly differently before and after.
+    Scoring the golden vectors with the unpruned model recorded numbers the
+    browser can never reproduce: on the fixture's worst case the difference was
+    6.1e-2, entirely from n-grams that appeared in training with a coefficient
+    under the floor.
+
+    Those grams are not hypothetical — they are the double-space grams produced
+    by the ``unquoted`` view, where stripping a ``''`` pair leaves two spaces that
+    are never re-collapsed. The JS side legitimately cannot find them in the
+    pruned vocabulary, so the fixture has to be computed the way the runtime
+    computes.
+    """
+    from . import features as feat
+    from .normalize import normalize, presence_ngrams
+
+    index_of = {gram: i for i, gram in enumerate(vocab)}
+    out = np.empty(len(commands), dtype=np.float64)
+
+    for row, command in enumerate(commands):
+        norm = normalize(command)
+        dense_z = feat.standardise(
+            feat.dense_features(norm)[None, :], model.dense_spec
+        )
+        total = float((dense_z @ model.weights[len(model.vectorizer.vocabulary_) :])[0])
+        for gram in window_ngrams(train_mod.vectorizer_input(command)):
+            position = index_of.get(gram)
+            if position is not None:
+                total += coef[position]
+        out[row] = 2.0 / (1.0 + np.exp(-(total + model.intercept)))
+
+    return out
+
+
 def _assert_fold_is_exact(model) -> np.ndarray:
     """Verify that folding IDF into the coefficients preserves the score.
 
@@ -243,7 +281,9 @@ def export_model(model) -> dict:
     rows = _load_dataset()
     golden_rows = _select_golden(rows, GOLDEN_COUNT)
     golden_commands = [row.command for row in golden_rows]
-    golden_scores = _score(model, golden_commands)
+    golden_scores = _score_pruned(
+        model, pruned_vocab, pruned_coef, golden_commands
+    )
 
     golden = {
         "normalizeVersion": NORMALIZE_VERSION,
