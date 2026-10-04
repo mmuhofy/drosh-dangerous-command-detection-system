@@ -28,4 +28,4 @@ package-lock.json
 .vscode/
 .idea/
 .DS_Store
-Thumbs.db
+Thumbs.dbtools/dense_reference.json
