@@ -1,10 +1,12 @@
-"""Compare choose_thresholds against the direct cost at matching candidates.
+"""Exhaustive trace of choose_thresholds on a six-sample case small to verify by hand.
 
-test_thresholds.py says the two disagree (2619 vs 43 on synthetic data) but not
-where. This walks the candidate indices the search uses and prints, for a handful
-of them, the cost the search computed from its suffix sums next to the cost
-_threshold_cost reports at the same operating point. A row where the two differ
-localises the bug to a specific term.
+The randomised comparisons in test_thresholds.py say the search disagrees with
+brute force but a 400-sample cloud hides which term is wrong. This runs a case
+where every number can be checked on paper, and prints the full candidate table:
+for each (warn index, block index) pair, what the suffix sums compute and what
+_threshold_cost reports at the same operating point.
+
+A row where the two differ names the offending term directly.
 
     PYTHONPATH=ml/src .venv/bin/python tools/diagnose_thresholds.py
 """
@@ -21,70 +23,102 @@ from drosh_ml.train import (
     choose_thresholds,
 )
 
+# Hand-checkable: three safe well below, one risky in the middle, two destructive
+# on top, with one ambiguous pair to exercise tie handling.
+TRUTH = np.array(
+    [
+        Risk.SAFE.value,
+        Risk.SAFE.value,
+        Risk.SAFE.value,
+        Risk.RISKY.value,
+        Risk.DESTRUCTIVE.value,
+        Risk.DESTRUCTIVE.value,
+    ]
+)
+RISK = np.array([0.05, 0.10, 0.20, 0.80, 1.60, 1.90])
+
 
 def main() -> None:
-    rng = np.random.default_rng(0)
-    n = 400
-    truth = np.concatenate(
-        [np.zeros(n), np.ones(n // 2), np.full(n // 2, Risk.DESTRUCTIVE.value)]
+    order = np.argsort(RISK, kind="stable")
+    sorted_risk = RISK[order]
+    is_d = (TRUTH == Risk.DESTRUCTIVE.value)[order]
+    is_r = (TRUTH == Risk.RISKY.value)[order]
+    is_s = (TRUTH == Risk.SAFE.value)[order]
+
+    top = float(sorted_risk[-1])
+    candidates = np.concatenate(
+        [
+            [top + 1.0],
+            sorted_risk[:-1] + (sorted_risk[1:] - sorted_risk[:-1]) / 2.0,
+            [top + 1e-9],
+        ]
     )
-    centres = np.concatenate(
-        [np.full(n, 0.1), np.full(n // 2, 1.0), np.full(n // 2, 1.9)]
-    )
-    risk = np.clip(centres + rng.normal(0.0, 0.35, len(centres)), 0.0, 2.0)
+    safe_suffix = np.concatenate([np.cumsum(is_s[::-1])[::-1], [0.0]])
+    risky_prefix = np.concatenate([[0.0], np.cumsum(is_r)])
+    destr_suffix = np.concatenate([np.cumsum(is_d[::-1])[::-1], [0.0]])
 
-    order = np.argsort(risk, kind="stable")
-    sorted_risk = risk[order]
-    is_destructive = (truth == Risk.DESTRUCTIVE.value)[order]
-    is_risky = (truth == Risk.RISKY.value)[order]
-    is_safe = (truth == Risk.SAFE.value)[order]
-
-    safe_suffix = np.concatenate([np.cumsum(is_safe[::-1])[::-1], [0.0]])
-    risky_suffix = np.concatenate([np.cumsum(is_risky[::-1])[::-1], [0.0]])
-    destr_suffix = np.concatenate([np.cumsum(is_destructive[::-1])[::-1], [0.0]])
-    cuts = np.concatenate([[np.min(sorted_risk) - 1.0], sorted_risk])
-
-    print(f"samples           : {len(truth)}")
-    print(f"cuts length       : {len(cuts)}   suffix lengths: {len(safe_suffix)}")
+    n = len(RISK)
+    print("truth   :", [int(t) for t in TRUTH[order]], " (0=safe 1=risky 2=destructive)")
+    print("risk    :", [round(float(r), 3) for r in sorted_risk])
+    print("is_safe :", [bool(x) for x in is_s])
+    print("is_risky:", [bool(x) for x in is_r])
+    print("is_dest :", [bool(x) for x in is_d])
     print()
-    print(f"{'i':>6} {'warn':>8} {'safeSuf':>8} {'riskySuf':>9} {'destrSuf':>9}"
-          f" {'searchCost':>11} {'directCost':>11} {'delta':>9}")
-    print("-" * 82)
-
-    for i in range(0, len(cuts), max(1, len(cuts) // 18)):
-        j = i  # warn == block
-        search_cost = (
-            safe_suffix[i] * 1.0
-            + risky_suffix[i] * MISSED_RISK_COST
-            + destr_suffix[j] * FALSE_NEGATIVE_COST
-        )
-        direct = _threshold_cost(truth, risk, float(cuts[i]), float(cuts[j]))
-        delta = search_cost - direct
+    print(f"{'k':>3} {'candidate':>10} {'safeSuf':>8} {'riskPre':>8} {'destSuf':>8}")
+    print("-" * 42)
+    for k in range(n + 1):
         print(
-            f"{i:>6} {cuts[i]:>8.4f} {safe_suffix[i]:>8} {risky_suffix[i]:>9} "
-            f"{destr_suffix[j]:>9} {search_cost:>11.1f} {direct:>11.1f} {delta:>9.1f}"
+            f"{k:>3} {candidates[k]:>10.4f} {safe_suffix[k]:>8} "
+            f"{risky_prefix[k]:>8} {destr_suffix[k]:>8}"
         )
 
     print()
-    got = choose_thresholds(truth, risk)
-    got_cost = _threshold_cost(truth, risk, got["warn"], got["block"])
-    print(f"search returned   : warn={got['warn']:.4f} block={got['block']:.4f} cost={got_cost:.1f}")
+    print("=== pair scan ===")
+    print(f"{'i':>3} {'j':>3} {'warn':>8} {'block':>8} {'search':>9} {'direct':>9} {'delta':>8}")
+    print("-" * 60)
+    search_best = (float("inf"), None, None)
+    for i in range(n + 1):
+        base = safe_suffix[i] + risky_prefix[i] * MISSED_RISK_COST
+        for j in range(i, n + 1):
+            cost = base + destr_suffix[j] * FALSE_NEGATIVE_COST
+            direct = _threshold_cost(TRUTH, RISK, float(candidates[i]), float(candidates[j]))
+            if i == 0 or j == i or (i, j) == (n, n) or (i, j) == (2, 2):
+                print(
+                    f"{i:>3} {j:>3} {candidates[i]:>8.4f} {candidates[j]:>8.4f} "
+                    f"{cost:>9.1f} {direct:>9.1f} {cost - direct:>8.1f}"
+                )
+            if cost < search_best[0]:
+                search_best = (cost, i, j)
 
-    best = float("inf")
-    best_pair = (0.0, 0.0)
-    grid = np.unique(np.concatenate([risk, [risk.min() - 1, risk.max() + 1]]))
+    cost, i, j = search_best
+    print()
+    print(
+        f"search argmin    : i={i} j={j} warn={candidates[i]:.4f} "
+        f"block={candidates[j]:.4f} cost={cost:.1f}"
+    )
+
+    grid = np.unique(
+        np.concatenate(
+            [RISK, [RISK.min() - 1, RISK.max() + 1], (np.sort(RISK)[:-1] + np.sort(RISK)[1:]) / 2]
+        )
+    )
+    best = (float("inf"), 0.0, 0.0)
     for w in grid:
         for b in grid:
             if b < w:
                 continue
-            c = _threshold_cost(truth, risk, float(w), float(b))
-            if c < best:
-                best = c
-                best_pair = (float(w), float(b))
-    print(f"brute force best  : warn={best_pair[0]:.4f} block={best_pair[1]:.4f} cost={best:.1f}")
+            c = _threshold_cost(TRUTH, RISK, float(w), float(b))
+            if c < best[0] - 1e-12:
+                best = (c, float(w), float(b))
+    print(
+        f"brute force best : warn={best[1]:.4f} block={best[2]:.4f} cost={best[0]:.1f}"
+    )
+
+    got = choose_thresholds(TRUTH, RISK)
+    got_cost = _threshold_cost(TRUTH, RISK, got["warn"], got["block"])
+    print(f"choose_thresholds: warn={got['warn']:.4f} block={got['block']:.4f} cost={got_cost:.1f}")
     print()
-    print("If the delta column is non-zero, the suffix sums do not describe the cost.")
-    print("If the delta column is all zero but the search still loses, the argmin is wrong.")
+    print("MATCH" if abs(got_cost - best[0]) < 1e-9 else "MISMATCH")
 
 
 if __name__ == "__main__":
