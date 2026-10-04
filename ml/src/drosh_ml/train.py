@@ -88,8 +88,19 @@ def _build_matrix(
 ):
     """Vectorise commands into the sparse-dense design matrix.
 
-    Returns ``(matrix, vectorizer, dense_spec)``. When ``fit_dense`` is set the
-    standardiser is (re)fitted here; otherwise the frozen one is applied.
+    The vectoriser is fed :func:`normalise_views`, i.e. the *same* text the
+    JavaScript runtime will produce — not the raw command.
+
+    This is the single most important line in the file. ``TfidfVectorizer`` does
+    its own lowercasing and whitespace handling, and those differ from ours: it
+    does not split segments, does not preserve shell operators, and does not
+    strip ANSI or invisible characters. Feeding it raw text means it windows a
+    different string than the device will, so the exported vocabulary describes
+    one representation and the runtime computes another. That was the 5.15e-01
+    fold failure: only the multi-segment probes diverged, because for
+    single-segment commands our normalisation happens to be a no-op.
+
+    Returns ``(matrix, vectorizer, dense_spec)``.
     """
     dense_raw = np.array([feat.dense_features(_norm(c)) for c in commands])
 
@@ -97,7 +108,9 @@ def _build_matrix(
         dense_spec = feat.fit_standardiser(dense_raw)
     dense_z = feat.standardise(dense_raw, dense_spec)
 
-    sparse = vectorizer.transform(commands)
+    # Feed the vectoriser exactly what the runtime will feed it.
+    texts = ["\u0000".join(_norm(c).views) for c in commands]
+    sparse = vectorizer.transform(texts)
     matrix = _hstack(sparse, dense_z)
     return matrix, vectorizer, dense_spec
 
@@ -200,6 +213,9 @@ def fit(rows: list[Row], val_fraction: float = 0.15) -> TrainedModel:
     train_y = targets[train_idx]
 
     # Fit the vectoriser and standardiser on the training split only.
+    # ``analyzer="char"`` over the joined views: a NUL cannot occur in the
+    # normalised output (everything outside 0x20-0x7E is dropped), so the two
+    # views stay separable and no n-gram can straddle the join.
     vectorizer = TfidfVectorizer(
         analyzer="char",
         ngram_range=(2, 5),
@@ -208,9 +224,10 @@ def fit(rows: list[Row], val_fraction: float = 0.15) -> TrainedModel:
         use_idf=True,
         norm=None,
         sublinear_tf=False,
+        lowercase=False,
         dtype=np.float64,
     )
-    vectorizer.fit(train_cmds)
+    vectorizer.fit(["\u0000".join(_norm(c).views) for c in train_cmds])
 
     X_train, vectorizer, dense_spec = _build_matrix(
         train_cmds, vectorizer, None, fit_dense=True

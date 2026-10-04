@@ -42,6 +42,7 @@ from . import features as feat
 from . import train as train_mod
 from . import __init__ as pkg
 from .build_dataset import REPO_ROOT, Row
+from .normalize import normalize, presence_ngrams
 from .train import _load_dataset
 
 __all__ = ["export_model", "main"]
@@ -96,19 +97,24 @@ def _assert_fold_is_exact(model) -> np.ndarray:
     unfitted = 2.0 * _sigmoid(matrix @ model.weights + model.intercept)
 
     # Rebuild the score by hand using the folded coefficients.
-    from .normalize import normalize
-
     folded_scores = []
     for command in probe:
         norm = normalize(command)
-        total = dense_w @ feat.standardise(
-            feat.dense_features(norm)[None, :], model.dense_spec
-        )[0]
-        for gram in _grams(norm):
+        total = float(
+            (
+                dense_w
+                @ feat.standardise(
+                    feat.dense_features(norm)[None, :], model.dense_spec
+                )
+            )[0]
+        )
+        # Window the same joined string the vectoriser was fitted on, or the
+        # lookup below misses every n-gram that straddles the two views.
+        for gram in presence_ngrams(joined_views(norm)):
             index = vectorizer.vocabulary_.get(gram)
             if index is not None:
-                total += folded[index]
-        folded_scores.append(2.0 * _sigmoid(total + model.intercept))
+                total += float(folded[index])
+        folded_scores.append(2.0 / (1.0 + np.exp(-(total + model.intercept))))
     folded_scores = np.array(folded_scores)
 
     max_error = float(np.max(np.abs(unfitted - folded_scores)))
@@ -122,10 +128,15 @@ def _assert_fold_is_exact(model) -> np.ndarray:
     return folded
 
 
-def _grams(norm) -> set[str]:
-    from .normalize import presence_ngrams
+#: Separator between the two views. A NUL cannot survive normalisation (every
+#: codepoint outside 0x20-0x7E is dropped), so no n-gram can straddle the join
+#: and each view contributes only its own internal n-grams.
+VIEW_JOIN = "\x00"
 
-    return presence_ngrams(norm.views)
+
+def joined_views(norm) -> str:
+    """The exact string the vectoriser windows: both views joined by a NUL."""
+    return VIEW_JOIN.join(norm.views)
 
 
 def _probe_commands() -> list[str]:
@@ -149,27 +160,24 @@ def _probe_commands() -> list[str]:
 
 
 def _prune(vocab: dict[str, int], folded: np.ndarray, floor: float):
-    """Drop near-zero coefficients, keeping the surviving vocabulary compact."""
+    """Drop near-zero coefficients, keeping the surviving vocabulary compact.
+
+    The inverse map is built locally on every call. A module-level cache looked
+    tidier but went stale the moment a second model was exported in the same
+    process, silently attaching the first model's n-gram strings to the second
+    model's indices.
+    """
+    index_to_gram = {index: gram for gram, index in vocab.items()}
     keep = np.where(np.abs(folded) >= floor)[0]
     new_vocab: dict[str, int] = {}
     new_coef: list[float] = []
     for index in keep:
-        gram = _index_to_gram(vocab, int(index))
+        gram = index_to_gram.get(int(index))
         if gram is None:
             continue
         new_vocab[gram] = len(new_coef)
         new_coef.append(float(folded[index]))
     return new_vocab, new_coef
-
-
-_INDEX_TO_GRAM: dict[int, str] | None = None
-
-
-def _index_to_gram(vocab: dict[str, int], index: int) -> str | None:
-    global _INDEX_TO_GRAM
-    if _INDEX_TO_GRAM is None:
-        _INDEX_TO_GRAM = {v: k for k, v in vocab.items()}
-    return _INDEX_TO_GRAM.get(index)
 
 
 def _select_golden(rows: list[Row], count: int) -> list[Row]:
@@ -242,8 +250,10 @@ def export_model(model) -> dict:
     )
 
     # --- the model itself ---
+    # N-grams can contain the view-join NUL (they were windowed over the joined
+    # string), so NUL is escaped alongside backslash and newline.
     vocab_blob = "\n".join(
-        gram.replace("\\", "\\\\").replace("\n", "\\n")
+        gram.replace("\\", "\\\\").replace("\n", "\\n").replace("\x00", "\\0")
         for gram in sorted(pruned_vocab, key=pruned_vocab.get)
     )
     coef_blob = ",".join(_js_number(c) for c in pruned_coef)
