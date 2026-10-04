@@ -35,6 +35,8 @@ ground truth; the disagreement is recorded rather than resolved by fiat.
 
 from __future__ import annotations
 
+import pathlib
+
 from .grammar import Generated, Rule
 from .labels import Risk
 
@@ -831,8 +833,59 @@ _BOUNDARY_COMMANDS = (
 )
 
 
+#: Hand-written mention-only fixture. Optional: the pipeline runs without it, but
+#: the model then has no way to learn that a dangerous-looking string which is
+#: merely written down is not a dangerous command.
+MENTIONS_PATH = (
+    pathlib.Path(__file__).resolve().parents[3] / "ml" / "data" / "drosh_mention_only_commands.txt"
+)
+
+
+def load_mentions(path: pathlib.Path | None = None) -> tuple[str, ...]:
+    """Read the mention-only fixture, refusing any row that actually executes.
+
+    The gate is ``audit_mentions``. It is not optional: one executing row is
+    weighted like any other and teaches the opposite of what the fixture is for,
+    so a file containing one is a bug in the fixture rather than a slightly
+    noisy sample.
+
+    Raises:
+        RuntimeError: if the file is missing or contains an executing row. Both
+            are build-stopping rather than warned-about, because the alternative
+            is a model that has learned that ``| sh`` is fine.
+    """
+    target = path or MENTIONS_PATH
+    if not target.exists():
+        return ()
+
+    from .audit_mentions import audit
+
+    findings, stats = audit(target)
+    if findings:
+        lines = "\n".join(
+            f"    {f.lineno}: {f.command}  -> {f.rule}" for f in findings[:10]
+        )
+        raise RuntimeError(
+            f"{target.name} contains {len(findings)} row(s) that execute rather "
+            f"than mention, and would teach the model the opposite lesson:\n"
+            f"{lines}\n"
+            f"Run: PYTHONPATH=ml/src python -m drosh_ml.audit_mentions {target}"
+        )
+    return _read_commands(target)
+
+
+def _read_commands(path: pathlib.Path) -> tuple[str, ...]:
+    commands: list[str] = []
+    for raw in path.read_text(encoding="utf-8").splitlines():
+        line = raw.strip()
+        if not line or line.startswith("#"):
+            continue
+        commands.append(line.split("|||", 1)[0].strip())
+    return tuple(commands)
+
+
 def generate() -> list[Generated]:
-    """Render every safe rule plus the curated lists.
+    """Render every safe rule, the curated lists and the mention-only fixture.
 
     Reuses ``grammar.Rule`` so the rendering, deduplication and stride-sampling
     behaviour are identical to the destructive side — a mismatch there would
@@ -862,6 +915,8 @@ def generate() -> list[Generated]:
         add(command, "hard_negative_boundary")
     for command in _ROUTINE_COMMANDS:
         add(command, "routine")
+    for command in load_mentions():
+        add(command, "hard_negative_mention_only")
 
     return rows
 
