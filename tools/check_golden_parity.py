@@ -11,6 +11,8 @@ to "the parity number is wrong".
 from __future__ import annotations
 
 import json
+
+import numpy as np
 from pathlib import Path
 
 from drosh_ml import train as T
