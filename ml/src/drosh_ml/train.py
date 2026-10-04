@@ -496,17 +496,23 @@ def _first_threshold_covering(
 ) -> float:
     """Lowest candidate threshold whose recall for one class meets ``recall_floor``.
 
+    ``prefix[k]`` counts the class inside ``[0, k)``, which is exactly the set
+    the threshold at ``starts`` does *not* cover — so recall is
+    ``1 - prefix[starts] / total``.
+
     Chosen over minimising the joint cost because the cost function is indifferent
-    between the two tiers — see choose_thresholds. Recall floors express what the
-    product actually needs: a risky command that is never warned is a missed
+    between the two tiers (see choose_thresholds). A recall floor expresses what
+    the product actually needs: a risky command that is never warned is a missed
     feature, and a destructive command that is never blocked is worse.
+
+    Candidate thresholds ascend, so the first one to clear the floor is the
+    lowest that does — which is what keeps false alarms down.
     """
     if total <= 0:
         return float(candidates[-1])
     for index in range(len(candidates)):
-        # prefix[starts[index]] counts the class inside [0, k), which is the set
-        # the threshold does NOT cover.
-        if 1.0 - prefix[starts[index]] / total >= recall_floor:
+        recall = 1.0 - float(prefix[starts[index]]) / total
+        if recall >= recall_floor:
             return float(candidates[index])
     return float(candidates[-1])
 
