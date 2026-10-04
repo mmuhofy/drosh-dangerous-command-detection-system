@@ -80,16 +80,29 @@ __all__ = [
 NGRAM_MIN = 2
 NGRAM_MAX = 5
 
-#: Separator used when re-joining segments. Trailing space matters — it keeps
-#: n-grams at a boundary from being identical to n-grams inside a segment.
-SEGMENT_SEP = " ; "
+#: Normalised form of each operator, used when re-joining segments. Pipe and
+#: sequence are deliberately different strings: ``curl x | sh`` must not look
+#: like ``curl x ; sh``. Whitespace collapse afterwards makes the padding moot.
+SEGMENT_SEPARATORS: tuple[tuple[str, str], ...] = (
+    ("&&", " && "),
+    ("||", " || "),
+    ("|", " | "),
+    ("&", " & "),
+    (";", " ; "),
+    ("\r\n", " ; "),
+    ("\n", " ; "),
+    ("\r", " ; "),
+)
 
-#: Characters that separate independent shell commands. ``&`` is included so
-#: that ``a && rm -rf /`` and ``a; rm -rf /`` behave identically. ``\r``/``\n``
-#: are included so a multi-line paste is treated as separate commands rather
-#: than one long one. The cost of including ``&`` is that ``2>&1`` yields a
-#: harmless empty trailing segment.
-SEGMENT_SPLIT_RE = re.compile(r"[;|&\r\n]+")
+#: Flattened operator set, longest-first so ``&&`` is not read as two ``&``.
+_OPERATORS: tuple[str, ...] = tuple(op for op, _ in SEGMENT_SEPARATORS)
+
+#: Characters that separate independent shell commands, each captured so the
+#: original operator can be preserved. Preserving ``|`` versus ``;`` matters:
+#: collapsing both to a single separator made ``curl x | sh`` and ``curl x ; sh``
+#: produce identical n-gram sets, which destroyed the pipe-to-shell signal that
+#: the whole curl-pipe-shell category depends on.
+SEGMENT_SPLIT_RE = re.compile(r"([;|&]+|[\r\n]+)")
 
 # Escape sequences. Ordered alternation: CSI and OSC must be tried before the
 # generic two-character escape branch, otherwise ESC[ would match as a
@@ -248,8 +261,10 @@ class Normalized:
 
     Attributes:
         raw:   the input exactly as received, never modified.
-        text:  all segments joined with :data:`SEGMENT_SEP`, ASCII-only,
-               lowercased, whitespace collapsed, quotes intact.
+        text:  the whole command, ASCII-only, lowercased, whitespace collapsed,
+               quotes intact, with the shell operators (``|``, ``;``, ``&&``)
+               preserved and spaced. Preserving them is what keeps
+               ``curl x | sh`` distinguishable from ``curl x ; sh``.
         unquoted: ``text`` with ``'`` and ``"`` removed.
         segments: individually normalised, non-empty command segments.
         dropped_non_ascii: how many characters the ASCII fold discarded.
@@ -314,6 +329,22 @@ def _normalise_segment(value: str) -> str:
     return _SPACE_RUN_RE.sub(" ", lowered).strip(" ")
 
 
+def _canonical_operator(token: str) -> str:
+    """Map a captured operator run to its canonical spaced form.
+
+    ``&&`` stays ``&&``, a lone ``&`` becomes ``&``, a newline becomes the
+    sequence operator, and ``|`` stays distinct from ``;``. That last part is
+    why this function exists: collapsing every operator to one separator made
+    ``curl x | sh`` and ``curl x ; sh`` identical, which destroyed the
+    pipe-to-shell signal the whole curl-pipe-shell category depends on.
+    """
+    if "\n" in token or "\r" in token or ";" in token:
+        return " ; "
+    if "|" in token:
+        return " || " if token.count("|") >= 2 else " | "
+    return " && " if token.count("&") >= 2 else " & "
+
+
 def normalize(raw: str) -> Normalized:
     """Normalise one raw command line.
 
@@ -323,30 +354,45 @@ def normalize(raw: str) -> Normalized:
     ('rm -rf /',)
     >>> normalize("ls\\nrm -rf /").segments
     ('ls', 'rm -rf /')
+    >>> normalize("ls\\nrm -rf /").text
+    'ls ; rm -rf /'
+    >>> normalize("curl x | sh").text
+    'curl x | sh'
+    >>> normalize("a && b").text
+    'a && b'
     >>> normalize("Ğünye").text
     'gunye'
     """
     without_escapes = strip_ansi(raw)
-    segments = tuple(
-        segment
-        for segment in (_normalise_segment(part) for part in SEGMENT_SPLIT_RE.split(without_escapes))
-        if segment
-    )
 
-    text = SEGMENT_SEP.join(segments)
+    # Split into alternating content/operator runs; odd indices are operators.
+    pieces = SEGMENT_SPLIT_RE.split(without_escapes)
+
+    segments: list[str] = []
+    rebuilt: list[str] = []
+    for index, piece in enumerate(pieces):
+        if index % 2 == 1:
+            rebuilt.append(_canonical_operator(piece))
+            continue
+        segment = _normalise_segment(piece)
+        if segment:
+            segments.append(segment)
+            rebuilt.append(segment)
+
+    text = _SPACE_RUN_RE.sub(" ", " ".join(rebuilt)).strip(" ")
     unquoted = text.replace("'", "").replace('"', "")
 
-    # Counted on the pre-segmentation string so that a character dropped from
-    # any segment is still reported.
+    # Counted pre-segmentation so a character dropped from any segment counts.
     _, dropped = fold_ascii(without_escapes)
 
     return Normalized(
         raw=raw,
         text=text,
         unquoted=unquoted,
-        segments=segments,
+        segments=tuple(segments),
         dropped_non_ascii=dropped,
     )
+
 
 
 def presence_ngrams(views: Sequence[str]) -> set[str]:

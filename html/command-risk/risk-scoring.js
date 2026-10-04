@@ -54,14 +54,23 @@
 
   var NGRAM_MIN = 2;
   var NGRAM_MAX = 5;
-  var SEGMENT_SEP = " ; ";
+  // Canonical form of each shell operator. | and ; are deliberately distinct:
+  // collapsing them made `curl x | sh` identical to `curl x ; sh`, which
+  // destroyed the pipe-to-shell signal.
+  var OPERATORS = {
+    nl: " ; ",
+    pipe2: " || ",
+    pipe: " | ",
+    and2: " && ",
+    and: " & ",
+  };
 
   // --- regexes: line-for-line mirrors of the Python originals ---------------
 
   var ANSI_RE =
     /\x1b(?:\[[0-?]*[ -\/]*[@-~]|\][^\x07\x1b]*(?:\x07|\x1b\\)|[PX^_][^\x1b]*(?:\x1b\\)|[@-Z\x5c-\x5f]|[ -\/]*[0-~])/g;
 
-  var SEGMENT_SPLIT_RE = /[;|&\r\n]+/;
+  var SEGMENT_SPLIT_RE = /([;|&]+|[\r\n]+)/;
   var WS_CONTROL_RE = /[\t\v\f\r\n]/g;
   var CONTROL_RE = /[\x00-\x1f\x7f]/g;
   var SPACE_RUN_RE = / {2,}/g;
@@ -340,18 +349,45 @@
     return lowered.replace(SPACE_RUN_RE, " ").replace(SPACE_TRIM_RE, "");
   }
 
+  /* Map a captured operator run to its canonical spaced form. Mirrors
+     _canonical_operator() in ml/src/drosh_ml/normalize.py. */
+  function canonicalOperator(token) {
+    if (token.indexOf("\n") !== -1 || token.indexOf("\r") !== -1 || token.indexOf(";") !== -1) {
+      return OPERATORS.nl;
+    }
+    if (token.indexOf("|") !== -1) {
+      var pipes = token.split("|").length - 1;
+      return pipes >= 2 ? OPERATORS.pipe2 : OPERATORS.pipe;
+    }
+    var ampersands = token.split("&").length - 1;
+    return ampersands >= 2 ? OPERATORS.and2 : OPERATORS.and;
+  }
+
   function normalize(raw) {
     var withoutEscapes = stripAnsi(String(raw));
     var rawFold = foldAscii(withoutEscapes);
 
-    var segments = withoutEscapes
-      .split(SEGMENT_SPLIT_RE)
-      .map(normaliseSegment)
-      .filter(function (segment) {
-        return segment.length > 0;
-      });
+    // Split into alternating content/operator runs; odd indices are operators.
+    var pieces = withoutEscapes.split(SEGMENT_SPLIT_RE);
 
-    var text = segments.join(SEGMENT_SEP);
+    var segments = [];
+    var rebuilt = [];
+    for (var i = 0; i < pieces.length; i++) {
+      if (i % 2 === 1) {
+        rebuilt.push(canonicalOperator(pieces[i]));
+        continue;
+      }
+      var segment = normaliseSegment(pieces[i]);
+      if (segment.length > 0) {
+        segments.push(segment);
+        rebuilt.push(segment);
+      }
+    }
+
+    var text = rebuilt
+      .join(" ")
+      .replace(SPACE_RUN_RE, " ")
+      .replace(SPACE_TRIM_RE, "");
     var unquoted = text.split("'").join("").split('"').join("");
 
     return {
@@ -405,7 +441,7 @@
     NORMALIZE_VERSION: "1",
     NGRAM_MIN: NGRAM_MIN,
     NGRAM_MAX: NGRAM_MAX,
-    SEGMENT_SEP: SEGMENT_SEP,
+    canonicalOperator: canonicalOperator,
     stripAnsi: stripAnsi,
     foldAscii: foldAscii,
     normalize: normalize,
