@@ -273,71 +273,69 @@ def choose_thresholds(y_true: np.ndarray, risk: np.ndarray) -> dict[str, float]:
     ``warn``: risk at or above this fires the soft warning.
     ``block``: risk at or above this fires the strong warning (always >= warn).
 
-    Two mistakes are charged for, and nothing else:
+    Two mistakes are charged for, nothing else:
 
       * a DESTRUCTIVE command whose risk stays below ``block``:
-        ``FALSE_NEGATIVE_COST`` — this is the data-loss case.
+        ``FALSE_NEGATIVE_COST`` — the data-loss case.
       * a SAFE command whose risk reaches ``warn``: 1 — crying wolf.
 
-    A RISKY command that gets warned is correct behaviour and costs nothing, and
-    so is a correct silence. That asymmetry is the whole point: an over-eager
-    warning on a clean build is annoying but recoverable, while a missed
-    ``rm -rf /`` is not.
+    A RISKY command that gets warned is correct behaviour and free, and so is a
+    correct silence. That asymmetry is deliberate: an over-eager warning on a
+    clean build is annoying but recoverable, while a missed ``rm -rf /`` is not.
 
-    Candidates are the observed risks themselves plus -inf, which is where the
-    optimum of a threshold rule always lands. One sort plus prefix sums, then a
-    two-pointer scan over the cut indices, gives the exact optimum in O(n log n)
-    rather than O(n^2) over a grid.
+    Search: candidates are the observed risks plus -inf, which is where the
+    optimum of any threshold rule lands. The full (warn, block) grid is
+    evaluated with cumulative sums in O(n log n + k^2) where k is the candidate
+    count, rather than O(n^2) over a dense grid. This is small (validation-sized
+    n) and exact, which matters more here than shaving constants.
     """
     y_true = np.asarray(y_true, dtype=np.float64)
     risk = np.asarray(risk, dtype=np.float64)
     n = len(y_true)
     if n == 0:
-        return {"warn": 1.0, "block": 2.0}
+        return {"warn": 1.0, "block": 3.0}
 
     is_destructive = y_true == Risk.DESTRUCTIVE.value
     is_safe = y_true == Risk.SAFE.value
 
     order = np.argsort(risk, kind="stable")
     sorted_risk = risk[order]
-    wolf = is_safe[order].astype(np.float64)          # cost if warned
-    missed = is_destructive[order].astype(np.float64)  # cost if not block-called
+    # Cost charged if a given sample ends up warned / not-block-called.
+    wolf = is_safe[order].astype(np.float64)
+    missed = is_destructive[order].astype(np.float64) * FALSE_NEGATIVE_COST
 
-    # cuts[k]: the k-th candidate. cuts[0] = -inf means "warn on nothing".
+    # cuts[k] is a candidate threshold; cuts[0] = -inf means "warn on nothing".
+    # A threshold of cuts[k] covers exactly the samples sorted[:k].
     cuts = np.concatenate([[-np.inf], sorted_risk])
-    # Samples sorted[:k] are above cuts[k-1]; i.e. warned when warn_t == cuts[k].
     wolf_prefix = np.concatenate([[0.0], np.cumsum(wolf)])
     miss_prefix = np.concatenate([[0.0], np.cumsum(missed)])
-    total_missed = float(missed.sum())
+    n_cuts = len(cuts)
 
-    # A block cut of cuts[k] covers samples sorted[:k]. Any sample warned but not
-    # block-called only costs if it was SAFE, which wolf_prefix already charges.
     best: tuple[float, float, float] | None = None
 
-    for i in range(len(cuts)):
-        # warn_t = cuts[i]: samples sorted[:i] warned. wolf cost is fixed.
+    for i in range(n_cuts):
+        # warn_t = cuts[i]: samples sorted[:i] are warned.
         wolf_cost = wolf_prefix[i]
-        # Block cut starts at cuts[i] (>= warn_t), so it covers at least :i.
-        # Start with block covering everything (:n), then shrink from the right.
-        miss_cost = total_missed - miss_prefix[i]
-        cost = wolf_cost + miss_cost
-        if best is None or cost < best[0]:
-            best = (cost, float(cuts[i]), float(cuts[-1] if cuts[-1] != -np.inf else 1e9))
-
-        # Shrink block cut downward from the max: dropping sample j from block
-        # coverage adds miss[j] cost back (only if it was destructive). Sample
-        # j is dropped when the cut moves from cuts[j] to cuts[j+1], and j ranges
-        # over 0..n-1 because cuts has n+1 entries while `missed` has n.
-        for j in range(n - 1, i - 1, -1):
-            miss_cost += missed[j] * FALSE_NEGATIVE_COST
+        for j in range(i, n_cuts):
+            # block_t = cuts[j]: samples sorted[:j] are block-called.
+            # A destructive sample is missed iff j <= its index, so the missed
+            # cost is the suffix of the destructive mass from i onward that is
+            # NOT covered by j, i.e. the part at index >= max(i, j) is covered.
+            # Cost = wolf among warned ([:i]) + missed among not-block-called.
+            # not-block-called destructive = indices >= j (those in [i,j) warned
+            # are already counted in wolf only if safe, so treat separately).
+            covered_up_to = max(i, j)
+            miss_cost = float(miss_prefix[n] - miss_prefix[covered_up_to])
             cost = wolf_cost + miss_cost
             if best is None or cost < best[0] - 1e-12:
                 best = (cost, float(cuts[i]), float(cuts[j]))
 
     assert best is not None
     _, warn_t, block_t = best
-    if block_t == 1e9:
-        block_t = 3.0  # above the [0,2] risk range: never auto-block
+    # A block cut at the maximum risk still leaves the top sample uncovered only
+    # if the maximum itself is the cut; clamp warn <= block and keep both finite.
+    if block_t == -np.inf:
+        block_t = 3.0
     return {
         "warn": round(float(min(warn_t, block_t)), 4),
         "block": round(float(max(warn_t, block_t)), 4),
